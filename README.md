@@ -8,7 +8,7 @@ Browser Extension to share your [Claude](https://claude.ai) chats with one click
 [![Platform Chrome](https://img.shields.io/badge/Platform-Chrome-yellow?logo=google-chrome&logoColor=yellow)](https://chrome.google.com/webstore/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa)
 ![Platform Firefox](https://img.shields.io/badge/Platform-Firefox-orange?logo=firefox-browser&logoColor=orange)
 
-## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa)
+## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) OR [Download from Firefox Add-on Store](https://example.com/)
 </div>
 
 
@@ -25,7 +25,22 @@ Further conversations are served from ShareClaude’s database, not directly fro
 
 *Important: While the URL is private and not searchable, anyone with the URL can still view the conversation. Please avoid sharing sensitive or personal information.*
 
-## Installation
+## How to Use
+
+1. Open [Claude](https://claude.ai) in your browser
+2. Start or continue a conversation with Claude
+3. Click the ![share_button](https://github.com/user-attachments/assets/08baed07-07be-496d-aa40-c232e6022204) share icon in the input box adjacent to the attachments button.
+4. The sharing URL will be automatically copied to your clipboard
+5. Share the URL with anyone you want!
+
+## Tech Stack
+
+- **Frontend**: React, TailwindCSS
+- **Backend**: Cloudflare Workers
+- **Database**: Cloudflare D1
+
+
+## Installation (Debug)
 
 ### Chrome
 
@@ -46,24 +61,6 @@ Further conversations are served from ShareClaude’s database, not directly fro
 2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on..."
 4. Select the `manifest.json` file inside the `extension` folder from the cloned repository
-
-## How to Use
-
-1. Open [Claude](https://claude.ai) in your browser
-2. Start or continue a conversation with Claude
-3. Click the ![share_button](https://github.com/user-attachments/assets/08baed07-07be-496d-aa40-c232e6022204) share icon in the input box adjacent to the attachments button.
-4. The sharing URL will be automatically copied to your clipboard
-5. Share the URL with anyone you want!
-
-## Tech Stack
-
-- **Frontend**: React, TailwindCSS
-- **Backend**: Cloudflare Workers
-- **Database**: Cloudflare D1
-
-## Known Issues
-
-- ~~Extension icon may not appear on the first load. Refreshing the page resolves this issue~~
 
 ## Contributing
 
