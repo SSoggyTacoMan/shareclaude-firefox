@@ -19,5 +19,11 @@
                 "content.js"
             ]
         }
-    ]
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "shareclaude@shareclaude.pages.dev",
+            "strict_min_version": "109.0"
+        }
+    }
 }
