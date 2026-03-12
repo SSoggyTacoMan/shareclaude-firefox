@@ -8,7 +8,7 @@ Browser Extension to share your [Claude](https://claude.ai) chats with one click
 [![Platform Chrome](https://img.shields.io/badge/Platform-Chrome-yellow?logo=google-chrome&logoColor=yellow)](https://chrome.google.com/webstore/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa)
 ![Platform Firefox](https://img.shields.io/badge/Platform-Firefox-orange?logo=firefox-browser&logoColor=orange)
 
-## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) OR [Download from Firefox Add-on Store](https://example.com/)
+## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) OR [Download from Firefox Add-on Store](https://addons.mozilla.org/en-US/firefox/addon/shareclaude/)
 </div>
 
 
@@ -40,9 +40,16 @@ Further conversations are served from ShareClaude’s database, not directly fro
 - **Database**: Cloudflare D1
 
 
-## Installation (Debug)
+## Installation
 
 ### Chrome
+## Installation
+
+### Chrome 
+
+Install from [Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) **(Recommended)**
+
+**OR** for development/debugging:
 
 1. Clone this repository:
    ```bash
@@ -53,6 +60,10 @@ Further conversations are served from ShareClaude’s database, not directly fro
 4. Click "Load unpacked" and select the `extension` folder from the cloned repository
 
 ### Firefox
+
+Install from [Firefox Add-ons Store](https://addons.mozilla.org/firefox/addon/shareclaude/) **(Recommended)**
+
+**OR** for development/debugging:
 
 1. Clone this repository:
    ```bash
