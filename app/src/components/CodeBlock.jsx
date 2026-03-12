@@ -2,6 +2,7 @@ import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { typescript, javascript, python, json, bash, jsx, markup as html, sql } from 'react-syntax-highlighter/dist/esm/languages/prism'
 import dracula from 'react-syntax-highlighter/dist/esm/styles/prism/dracula'
 import classNames from 'classnames';
+import PropTypes from 'prop-types';
 
 SyntaxHighlighter.registerLanguage('javascript', javascript)
 SyntaxHighlighter.registerLanguage('typescript', typescript)
@@ -12,7 +13,7 @@ SyntaxHighlighter.registerLanguage('jsx', jsx)
 SyntaxHighlighter.registerLanguage('html', html)
 SyntaxHighlighter.registerLanguage('sql', sql)
 
-const CodeBlock = ({ node, inline, className, children, isHuman, title, ...props }) => {
+const CodeBlock = ({ inline, className, children, isHuman, title, ...props }) => {
     const match = /language-(\w+)/.exec(className || '');
 
     if (!inline && match) {
@@ -52,6 +53,14 @@ const CodeBlock = ({ node, inline, className, children, isHuman, title, ...props
             {children}
         </code>
     );
+};
+
+CodeBlock.propTypes = {
+    inline: PropTypes.bool,
+    className: PropTypes.string,
+    children: PropTypes.node,
+    isHuman: PropTypes.bool,
+    title: PropTypes.string,
 };
 
 export default CodeBlock;
