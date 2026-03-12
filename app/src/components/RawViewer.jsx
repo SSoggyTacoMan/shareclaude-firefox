@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-const PROD_API_ORIGIN = 'https://shareclaude.pages.dev';
-
-function isLocalDevHost() {
-    const { hostname } = window.location;
-    return hostname === 'localhost' || hostname === '127.0.0.1';
-}
-
 function formatChatAsText(chatData) {
     const lines = [`# ${chatData.title}`, ''];
     const messages = Array.isArray(chatData.content) ? chatData.content : [];
@@ -26,29 +19,16 @@ function RawViewer() {
     useEffect(() => {
         const load = async () => {
             try {
-                const origins = [...new Set(
-                    isLocalDevHost()
-                        ? [window.location.origin, PROD_API_ORIGIN]
-                        : [window.location.origin]
-                )];
-
-                let data = null;
-                let lastErr = null;
-
-                for (const origin of origins) {
+                const res = await fetch(`/api/chats/${chatId}`);
+                if (!res.ok) {
+                    let msg = `HTTP ${res.status}`;
                     try {
-                        const res = await fetch(`${origin}/api/chats/${chatId}`);
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        const ct = res.headers.get('content-type') ?? '';
-                        if (!ct.includes('application/json')) throw new Error('Non-JSON response');
-                        data = await res.json();
-                        break;
-                    } catch (e) {
-                        lastErr = e;
-                    }
+                        const errData = await res.json();
+                        msg = errData.msg || msg;
+                    } catch (_) { /* non-JSON error body */ }
+                    throw new Error(msg);
                 }
-
-                if (!data) throw lastErr ?? new Error('Failed to load chat');
+                const data = await res.json();
                 document.title = `${data.title} — raw`;
                 setText(formatChatAsText(data));
             } catch (e) {
@@ -58,21 +38,9 @@ function RawViewer() {
         load();
     }, [chatId]);
 
-    const preStyle = {
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-        fontSize: '0.875rem',
-        lineHeight: '1.7',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        padding: '2rem',
-        maxWidth: '860px',
-        margin: '0 auto',
-        color: error ? '#f87171' : '#d1d5db',
-    };
-
     return (
-        <div style={{ minHeight: '100vh', background: '#1a1a2e' }}>
-            <pre style={preStyle}>
+        <div className="min-h-screen bg-[#1a1a2e]">
+            <pre className={`mx-auto max-w-[860px] p-8 font-mono text-sm leading-[1.7] whitespace-pre-wrap break-words ${error ? 'text-red-400' : 'text-gray-300'}`}>
                 {error ? `Error: ${error}` : (text ?? 'Loading…')}
             </pre>
         </div>
