@@ -41,6 +41,16 @@ function ChatViewer() {
                             {chatData.title}
                         </h1>
                         <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
+                        <a
+                            href={`https://shareclaude.pages.dev/api/chats/${chatId}/raw`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 text-xs font-mono text-gray-400 border border-gray-600/50 rounded hover:border-gray-400/70 hover:text-gray-300 transition-colors"
+                            title="Plain text — readable by LLMs and scripts"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+                            raw
+                        </a>
                     </header>
                 )}
 
