@@ -18,7 +18,7 @@ const CodeBlock = ({ node, inline, className, children, isHuman, title, ...props
     if (!inline && match) {
         const language = match ? match[1].toLowerCase() : 'text';
         return (
-            <div className="rounded-lg overflow-hidden">
+            <div className="overflow-hidden rounded-lg">
                 <div className="bg-gray-800 px-4 py-1.5 text-xs text-gray-200">
                     <span>{title || language}</span>
                 </div>
