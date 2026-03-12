@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
@@ -205,6 +206,11 @@ const MarkdownRenderer = ({ content, isHuman }) => {
             })}
         </>
     );
+};
+
+MarkdownRenderer.propTypes = {
+    content: PropTypes.string.isRequired,
+    isHuman: PropTypes.bool
 };
 
 export default MarkdownRenderer;
