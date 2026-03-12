@@ -800,8 +800,14 @@ function monitorPageChanges() {
 	observer.observe(document.body, { childList: true, subtree: true })
 }
 
-window.addEventListener('load', async () => {
+async function init() {
 	organizationId = await getOrganizationId()
 	injectButtons()
 	monitorPageChanges()
-})
+}
+
+if (document.readyState === 'complete') {
+	init()
+} else {
+	window.addEventListener('load', init)
+}
