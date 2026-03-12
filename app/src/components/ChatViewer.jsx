@@ -80,7 +80,7 @@ function ChatViewer() {
                         </h1>
                         <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
                         <a
-                            href={`/c/${chatId}/raw`}
+                            href={`/api/chats/${chatId}/raw`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 text-xs font-mono text-gray-400 border border-gray-600/50 rounded hover:border-gray-400/70 hover:text-gray-300 transition-colors"

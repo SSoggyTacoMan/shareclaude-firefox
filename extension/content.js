@@ -785,12 +785,35 @@ function injectButtons() {
 		if (!exportWrap.contains(e.target)) menu.classList.remove('sc-open')
 	})
 
-	// Append ShareClaude controls to the end so they appear after Claude's native
-	// controls (action bar is flex justify-end).
-	// Order: [native Share] [divider] [shareBtn] [exportWrap]
-	actionsBar.appendChild(divider)
-	actionsBar.appendChild(shareBtn)
-	actionsBar.appendChild(exportWrap)
+	// Find native Share button and insert our controls immediately after it
+	const nativeShareBtn = [...actionsBar.querySelectorAll('button')].find((btn) => {
+		// Exclude our own ShareClaude buttons
+		if (btn.classList.contains('sc-icon-btn') || btn.closest('.sc-export-wrap')) return false
+		// Look for Claude's native Share button
+		return btn.dataset.testid === 'wiggle-controls-actions-share' || 
+		       (btn.textContent?.trim() === 'Share' && btn.className.includes('Button'))
+	})
+
+	if (nativeShareBtn) {
+		// Insert in correct order: divider, then shareBtn, then exportWrap
+		// All go right after the native Share button
+		const insertAfter = nativeShareBtn.nextSibling
+		if (insertAfter) {
+			actionsBar.insertBefore(exportWrap, insertAfter)
+			actionsBar.insertBefore(shareBtn, insertAfter)
+			actionsBar.insertBefore(divider, insertAfter)
+		} else {
+			// Native Share is last child
+			actionsBar.appendChild(divider)
+			actionsBar.appendChild(shareBtn)
+			actionsBar.appendChild(exportWrap)
+		}
+	} else {
+		// Fallback: just append to end
+		actionsBar.appendChild(divider)
+		actionsBar.appendChild(shareBtn)
+		actionsBar.appendChild(exportWrap)
+	}
 }
 
 function monitorPageChanges() {
