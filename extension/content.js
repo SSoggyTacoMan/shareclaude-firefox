@@ -2,11 +2,7 @@ const PAGE_URL = 'https://shareclaude.pages.dev'
 const CLAUDE_API_URL = 'https://claude.ai/api/organizations'
 let organizationId = ''
 
-const shareIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>`
-
 const loaderSVG = `<svg width="20px" height="20px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none" class="animate-spin text-white"><g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8z" opacity=".2"/><path d="M7.25.75A.75.75 0 018 0a8 8 0 018 8 .75.75 0 01-1.5 0A6.5 6.5 0 008 1.5a.75.75 0 01-.75-.75z"/></g></svg>`
-
-const downloadIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
 
 // Store artifacts content globally for updates
 const artifactsCache = new Map()
@@ -520,248 +516,203 @@ function downloadFile(content, filename, mimeType) {
 
 // --- UI injection ---
 
-const BUTTON_STYLE =
-	'display:inline-flex;align-items:center;justify-content:center;height:32px;width:32px;border-radius:8px;border:none;background:none;cursor:pointer;color:var(--text-200, #b4b4b4);transition:background 0.15s;'
+function injectStyles() {
+	if (document.getElementById('sc-styles')) return
+	const s = document.createElement('style')
+	s.id = 'sc-styles'
+	s.textContent = `
+.sc-wrap{position:relative;display:inline-flex}
+.sc-menu{position:absolute;top:calc(100% + 6px);right:0;border-radius:12px;padding:4px;z-index:50000;min-width:220px;display:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.sc-menu.sc-open{display:block}
+.sc-menu[data-theme="light"]{background:rgba(255,255,255,0.92);border:1px solid rgba(0,0,0,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.12);color:#333}
+.sc-menu[data-theme="dark"]{background:rgba(40,40,40,0.92);border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.4);color:#e0e0e0}
+.sc-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;background:none;border:none;color:inherit;font-size:13px;text-align:left;cursor:pointer;border-radius:8px;font-family:inherit;line-height:1.4}
+.sc-menu[data-theme="light"] .sc-item:hover{background:rgba(0,0,0,0.06)}
+.sc-menu[data-theme="dark"] .sc-item:hover{background:rgba(255,255,255,0.08)}
+.sc-item svg{width:16px;height:16px;flex-shrink:0;opacity:0.55}
+.sc-sep{height:1px;margin:4px 8px}
+.sc-menu[data-theme="light"] .sc-sep{background:rgba(0,0,0,0.08)}
+.sc-menu[data-theme="dark"] .sc-sep{background:rgba(255,255,255,0.1)}
+.sc-lbl{padding:6px 12px 2px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.sc-menu[data-theme="light"] .sc-lbl{color:#999}
+.sc-menu[data-theme="dark"] .sc-lbl{color:#777}
+.sc-item.sc-loading{opacity:0.5;pointer-events:none}
+`
+	document.head.appendChild(s)
+}
 
-const BUTTON_HOVER_BG = 'var(--bg-200, rgba(255,255,255,0.08))'
+function detectTheme() {
+	const bg = getComputedStyle(document.body).backgroundColor
+	const m = bg.match(/(\d+),\s*(\d+),\s*(\d+)/)
+	if (!m) return 'light'
+	const lum = (parseInt(m[1]) * 299 + parseInt(m[2]) * 587 + parseInt(m[3]) * 114) / 1000
+	return lum < 128 ? 'dark' : 'light'
+}
 
-function findToolbarRow() {
-	// Strategy 1: Find the toolbar row via the active (non-inert) fieldset's bottom bar
-	const inputContainer = document.querySelector('[data-chat-input-container="true"]')
-	if (inputContainer) {
-		// Look for the toolbar row inside the non-inert fieldset
-		const fieldsets = inputContainer.querySelectorAll('fieldset:not([inert])')
-		for (const fs of fieldsets) {
-			const row = fs.querySelector('div.relative.flex.gap-2.w-full.items-center')
-			if (row) return row
+function findNativeShareButton() {
+	for (const btn of document.querySelectorAll('button')) {
+		if (btn.closest('.sc-wrap')) continue
+		if (btn.classList.contains('sc-native')) continue
+		const text = btn.textContent?.trim()
+		if (text === 'Share' || text === 'Share & Export') {
+			const rect = btn.getBoundingClientRect()
+			if (rect.top < 150 && rect.right > window.innerWidth / 2) return btn
 		}
 	}
-
-	// Strategy 2: Find via model selector button (very stable data-testid)
-	const modelBtn = document.querySelector('button[data-testid="model-selector-dropdown"]')
-	if (modelBtn) {
-		// Walk up to the toolbar row
-		let el = modelBtn.parentElement
-		while (el) {
-			if (el.classList && el.classList.contains('relative') && el.classList.contains('flex') && el.classList.contains('gap-2') && el.classList.contains('items-center')) {
-				return el
-			}
-			el = el.parentElement
-		}
-	}
-
-	// Strategy 3: Find the + button via aria-label="Toggle menu" inside input area
-	const toggleBtn = document.querySelector('button[aria-label="Toggle menu"]')
-	if (toggleBtn) {
-		let el = toggleBtn.parentElement
-		while (el) {
-			if (el.classList && el.classList.contains('relative') && el.classList.contains('flex') && el.classList.contains('gap-2') && el.classList.contains('items-center')) {
-				return el
-			}
-			el = el.parentElement
-		}
-	}
-
 	return null
 }
 
-function styleButton(btn) {
-	btn.style.cssText = BUTTON_STYLE
-	btn.addEventListener('mouseenter', () => {
-		btn.style.background = BUTTON_HOVER_BG
-	})
-	btn.addEventListener('mouseleave', () => {
-		btn.style.background = 'none'
-	})
-}
+function injectShareMenu() {
+	if (document.querySelector('.sc-wrap')) return
+	const nativeBtn = findNativeShareButton()
+	if (!nativeBtn) return
 
-function addShareButton() {
-	if (document.querySelector('.share-button')) return
-	const toolbarRow = findToolbarRow()
-	if (!toolbarRow) return
+	injectStyles()
 
-	const button = document.createElement('button')
-	button.innerHTML = shareIconSVG
-	styleButton(button)
-	button.type = 'button'
-	button.title = 'Share conversation'
-	button.ariaLabel = 'Share conversation'
-	button.classList.add('share-button')
+	// Hide native button but keep it in DOM so we can trigger it
+	nativeBtn.classList.add('sc-native')
+	nativeBtn.style.display = 'none'
 
-	button.addEventListener('click', async () => {
-		const conversationId = getConversationId()
-		if (!conversationId) {
-			alert('You need to go to a conversation to share it')
-			return
-		}
+	// Clone native button to match its exact styling
+	const btn = nativeBtn.cloneNode(true)
+	btn.classList.remove('sc-native')
+	btn.classList.add('sc-trigger')
+	btn.style.display = ''
 
-		button.innerHTML = loaderSVG
-		button.disabled = true
+	// Update button text from "Share" to "Share & Export"
+	const tw = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT)
+	let tn
+	while ((tn = tw.nextNode())) {
+		if (tn.textContent.trim() === 'Share') tn.textContent = 'Share & Export'
+	}
+	const savedBtnHTML = btn.innerHTML
 
-		const messages = await getConversationMessages({
-			organizationId,
-			conversationId
+	// Build dropdown menu
+	const menu = document.createElement('div')
+	menu.className = 'sc-menu'
+	menu.dataset.theme = detectTheme()
+
+	const icons = {
+		claude: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>',
+		share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>',
+		download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
+	}
+
+	function addItem(icon, label, handler) {
+		const item = document.createElement('button')
+		item.type = 'button'
+		item.className = 'sc-item'
+		item.innerHTML = icon + '<span>' + label + '</span>'
+		item.addEventListener('click', async (e) => {
+			e.stopPropagation()
+			await handler(item)
 		})
+		menu.appendChild(item)
+	}
+
+	function addSep() {
+		const d = document.createElement('div')
+		d.className = 'sc-sep'
+		menu.appendChild(d)
+	}
+
+	function addLabel(text) {
+		const l = document.createElement('div')
+		l.className = 'sc-lbl'
+		l.textContent = text
+		menu.appendChild(l)
+	}
+
+	// 1. Share via Claude (triggers native button)
+	addItem(icons.claude, 'Share via Claude', () => {
+		menu.classList.remove('sc-open')
+		nativeBtn.style.display = ''
+		nativeBtn.click()
+		requestAnimationFrame(() => { nativeBtn.style.display = 'none' })
+	})
+
+	// 2. Share to ShareClaude
+	addItem(icons.share, 'Share to ShareClaude', async () => {
+		menu.classList.remove('sc-open')
+		const conversationId = getConversationId()
+		if (!conversationId) { alert('Open a conversation first'); return }
+
+		btn.innerHTML = loaderSVG
+		btn.disabled = true
+
+		const messages = await getConversationMessages({ organizationId, conversationId })
 		if (!messages) {
 			alert('Failed to get conversation messages')
-			button.innerHTML = shareIconSVG
-			button.disabled = false
-			return
+			btn.innerHTML = savedBtnHTML; btn.disabled = false; return
 		}
 
 		const shareURL = await getShareURL(messages)
 		if (!shareURL) {
 			alert('Failed to generate share URL')
-			button.innerHTML = shareIconSVG
-			button.disabled = false
-			return
+			btn.innerHTML = savedBtnHTML; btn.disabled = false; return
 		}
 
 		navigator.clipboard.writeText(shareURL)
 		window.open(shareURL, '_blank')
-
-		// Reset button after the action
-		button.innerHTML = shareIconSVG
-		button.disabled = false
+		btn.innerHTML = savedBtnHTML; btn.disabled = false
 	})
 
-	// Insert before the send button area (last child of toolbar row)
-	const sendArea = toolbarRow.lastElementChild
-	toolbarRow.insertBefore(button, sendArea)
-}
-
-function addExportButton() {
-	if (document.querySelector('.export-button-wrapper')) return
-	const toolbarRow = findToolbarRow()
-	if (!toolbarRow) return
-
-	const button = document.createElement('button')
-	button.innerHTML = downloadIconSVG
-	styleButton(button)
-	button.type = 'button'
-	button.title = 'Export conversation'
-	button.ariaLabel = 'Export conversation'
-
-	// Dropdown menu
-	const dropdown = document.createElement('div')
-	dropdown.className = 'sc-export-dropdown'
-	dropdown.style.cssText =
-		'display:none;position:absolute;bottom:100%;right:0;margin-bottom:8px;background:#2a2a2a;border:1px solid #444;border-radius:8px;padding:4px;z-index:10000;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,0.4);'
+	addSep()
+	addLabel('Export')
 
 	const formats = [
-		{
-			label: 'Markdown (.md)',
-			ext: 'md',
-			convert: convertToMarkdown,
-			mime: 'text/markdown'
-		},
-		{
-			label: 'Plain Text (.txt)',
-			ext: 'txt',
-			convert: convertToText,
-			mime: 'text/plain'
-		},
-		{
-			label: 'HTML (.html)',
-			ext: 'html',
-			convert: convertToHTML,
-			mime: 'text/html'
-		},
-		{
-			label: 'Word (.docx)',
-			ext: 'docx',
-			convert: convertToDOCX,
-			mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-		},
-		{
-			label: 'Rich Text (.rtf)',
-			ext: 'rtf',
-			convert: convertToRTF,
-			mime: 'application/rtf'
-		}
+		{ label: 'Markdown (.md)', ext: 'md', convert: convertToMarkdown, mime: 'text/markdown' },
+		{ label: 'Plain Text (.txt)', ext: 'txt', convert: convertToText, mime: 'text/plain' },
+		{ label: 'HTML (.html)', ext: 'html', convert: convertToHTML, mime: 'text/html' },
+		{ label: 'Word (.docx)', ext: 'docx', convert: convertToDOCX, mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+		{ label: 'Rich Text (.rtf)', ext: 'rtf', convert: convertToRTF, mime: 'application/rtf' }
 	]
 
 	formats.forEach(({ label, ext, convert, mime }) => {
-		const option = document.createElement('button')
-		option.textContent = label
-		option.type = 'button'
-		option.style.cssText =
-			'display:block;width:100%;padding:8px 12px;background:none;border:none;color:#e0e0e0;font-size:13px;text-align:left;cursor:pointer;border-radius:6px;'
-		option.addEventListener('mouseenter', () => {
-			option.style.background = '#3a3a3a'
-		})
-		option.addEventListener('mouseleave', () => {
-			option.style.background = 'none'
-		})
-		option.addEventListener('click', async (e) => {
-			e.stopPropagation()
-			dropdown.style.display = 'none'
-
+		addItem(icons.download, label, async () => {
+			menu.classList.remove('sc-open')
 			const conversationId = getConversationId()
-			if (!conversationId) {
-				alert('You need to go to a conversation to export it')
-				return
-			}
+			if (!conversationId) { alert('Open a conversation first'); return }
 
-			button.innerHTML = loaderSVG
-			button.disabled = true
+			btn.innerHTML = loaderSVG
+			btn.disabled = true
 
-			const messages = await getConversationMessages({
-				organizationId,
-				conversationId
-			})
+			const messages = await getConversationMessages({ organizationId, conversationId })
 			if (!messages) {
 				alert('Failed to get conversation messages')
-				button.innerHTML = downloadIconSVG
-				button.disabled = false
-				return
+				btn.innerHTML = savedBtnHTML; btn.disabled = false; return
 			}
 
-			const filename = `${sanitizeFilename(messages.title)}.${ext}`
-			const content = convert(
-				messages.title || 'Conversation',
-				messages.content
-			)
+			const filename = sanitizeFilename(messages.title) + '.' + ext
+			const content = convert(messages.title || 'Conversation', messages.content)
 			downloadFile(content, filename, mime)
-
-			button.innerHTML = downloadIconSVG
-			button.disabled = false
+			btn.innerHTML = savedBtnHTML; btn.disabled = false
 		})
-		dropdown.appendChild(option)
 	})
 
-	// Wrapper for positioning
+	// Assemble
 	const wrapper = document.createElement('div')
-	wrapper.style.cssText = 'position:relative;display:inline-flex;'
-	wrapper.classList.add('export-button-wrapper')
-	wrapper.appendChild(button)
-	wrapper.appendChild(dropdown)
+	wrapper.className = 'sc-wrap'
+	nativeBtn.parentNode.insertBefore(wrapper, nativeBtn)
+	wrapper.appendChild(btn)
+	wrapper.appendChild(menu)
 
-	button.addEventListener('click', (e) => {
+	btn.addEventListener('click', (e) => {
+		e.preventDefault()
 		e.stopPropagation()
-		dropdown.style.display =
-			dropdown.style.display === 'none' ? 'block' : 'none'
+		menu.dataset.theme = detectTheme()
+		menu.classList.toggle('sc-open')
 	})
 
-	// Close dropdown when clicking outside
 	document.addEventListener('click', (e) => {
-		if (!wrapper.contains(e.target)) {
-			dropdown.style.display = 'none'
-		}
+		if (!wrapper.contains(e.target)) menu.classList.remove('sc-open')
 	})
-
-	// Insert before the send button area (last child of toolbar row)
-	const sendArea = toolbarRow.lastElementChild
-	toolbarRow.insertBefore(wrapper, sendArea)
 }
 
 function monitorPageChanges() {
 	const observer = new MutationObserver(() => {
-		if (!document.querySelector('.share-button')) {
-			addShareButton()
-		}
-		if (!document.querySelector('.export-button-wrapper')) {
-			addExportButton()
+		if (!document.querySelector('.sc-wrap')) {
+			injectShareMenu()
 		}
 	})
 
@@ -773,7 +724,6 @@ function monitorPageChanges() {
 
 window.addEventListener('load', async () => {
 	organizationId = await getOrganizationId()
-	addShareButton()
-	addExportButton()
+	injectShareMenu()
 	monitorPageChanges()
 })
