@@ -641,7 +641,7 @@ function injectStyles() {
 	const s = document.createElement('style')
 	s.id = 'sc-styles'
 	s.textContent = `
-.sc-divider{width:1px;height:20px;margin:0 4px;background:var(--border-300, rgba(128,128,128,0.25));flex-shrink:0}
+.sc-divider{width:2px;height:22px;margin:0 8px 0 6px;background:currentColor;opacity:0.22;border-radius:999px;align-self:center;flex-shrink:0}
 .sc-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;border-radius:6px;background:transparent;color:inherit;cursor:pointer;transition:background 0.1s}
 .sc-icon-btn:hover{background:var(--bg-200, rgba(128,128,128,0.1))}
 .sc-icon-btn:active{transform:scale(0.95)}
