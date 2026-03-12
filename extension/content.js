@@ -251,7 +251,7 @@ function normalizeMessageMarkdown(message) {
 	return transformExcerptBlocks(message, (excerptContent) => {
 		if (!excerptContent) return ''
 		const quotedLines = excerptContent
-			.split('\n')
+			.split(/\r?\n/)
 			.map((line) => `> ${line}`)
 			.join('\n')
 		return `> **Quoted excerpt**\n>\n${quotedLines}`
@@ -260,7 +260,7 @@ function normalizeMessageMarkdown(message) {
 
 function markdownToPlainText(message) {
 	return normalizeMessageMarkdown(message)
-		.replace(/```[\w-]*\n([\s\S]*?)```/g, (_, code) => code.trim())
+		.replace(/```[\w-]*\r?\n([\s\S]*?)\r?\n```/g, (_, code) => code.trim())
 		.replace(/^>\s?/gm, '')
 		.replace(/^#{1,6}\s+/gm, '')
 		.replace(/\*\*\*(.+?)\*\*\*/g, '$1')
@@ -303,7 +303,7 @@ function convertToHTML(title, messages) {
 
 		// 1. save fenced code blocks
 		const codeBlocks = []
-		text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+		text = text.replace(/```([\w-]*)\r?\n([\s\S]*?)\r?\n```/g, (_, lang, code) => {
 			const idx = codeBlocks.push({ lang, code: esc(code) }) - 1
 			return `\x00CODE${idx}\x00`
 		})

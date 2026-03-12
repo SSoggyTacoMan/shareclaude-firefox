@@ -40,7 +40,9 @@ function splitOnExcerpts(text) {
             quotedText = text.slice(bodyStart, blockEnd).trim();
         }
 
-        parts.push({ type: 'excerpt', content: quotedText });
+        if (quotedText) {
+            parts.push({ type: 'excerpt', content: quotedText });
+        }
         cursor = blockEnd;
         headerRe.lastIndex = blockEnd;
     }
@@ -220,7 +222,9 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         return subParts.map((sub, si) =>
             sub.type === 'excerpt'
                 ? renderExcerpt(sub.content, `${index}-${si}`)
-                : renderMarkdown(sub.content, `${index}-${si}`)
+                : sub.content.trim()
+                    ? renderMarkdown(sub.content, `${index}-${si}`)
+                    : null
         );
     };
 
