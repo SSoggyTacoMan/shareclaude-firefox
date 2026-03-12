@@ -4,6 +4,30 @@ import CodeBlock from './CodeBlock';
 import mermaid from 'mermaid';
 import { useEffect, useRef } from 'react';
 
+// Splits a markdown string on excerpt_from_previous_claude_message.txt blocks
+// Returns array of { type: 'markdown'|'excerpt', content: string }
+const EXCERPT_RE = /excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|\n?$)/g;
+
+function splitOnExcerpts(text) {
+    const parts = [];
+    let lastIndex = 0;
+    const re = new RegExp(EXCERPT_RE.source, 'g');
+    let match;
+    while ((match = re.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push({ type: 'markdown', content: text.slice(lastIndex, match.index) });
+        }
+        // group 1 = fenced code content, group 2 = plain content
+        const quotedText = (match[1] ?? match[2] ?? '').trim();
+        parts.push({ type: 'excerpt', content: quotedText });
+        lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) {
+        parts.push({ type: 'markdown', content: text.slice(lastIndex) });
+    }
+    return parts.length > 0 ? parts : [{ type: 'markdown', content: text }];
+}
+
 // Initialize mermaid with dark theme config
 mermaid.initialize({
     startOnLoad: true,
@@ -119,11 +143,24 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         }
     };
 
+    const renderExcerpt = (quotedText, key) => (
+        <div key={key} className="my-2 pl-3 border-l-2 border-[#D97757] rounded-r-sm bg-black/10">
+            <div className="text-xs text-[#D97757] mb-1 font-medium flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path fillRule="evenodd" d="M8 2a.75.75 0 0 1 .75.75v6.44l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 8.28a.75.75 0 0 1 1.06-1.06L7.25 9.19V2.75A.75.75 0 0 1 8 2Z" clipRule="evenodd" />
+                    <path d="M3.5 13.25a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Z" />
+                </svg>
+                Quoting
+            </div>
+            <div className="text-sm text-gray-400 whitespace-pre-wrap">{quotedText}</div>
+        </div>
+    );
+
     const renderMarkdown = (content, index) => (
         <ReactMarkdown
             key={index}
             remarkPlugins={[remarkGfm]}
-            className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-th:bg-gray-800 prose-td:border-gray-700 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500 prose-table:border prose-table:border-gray-700"
+            className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500"
             components={{
                 code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
                 pre: ({ children }) => (
@@ -134,14 +171,29 @@ const MarkdownRenderer = ({ content, isHuman }) => {
                 ),
                 table: ({ children }) => (
                     <div className="overflow-x-auto my-4">
-                        <table className="min-w-full divide-y divide-gray-700 border border-gray-700">{children}</table>
+                        <table className="min-w-full border-collapse border border-gray-700">{children}</table>
                     </div>
+                ),
+                th: ({ children }) => (
+                    <th className="px-3 py-2 bg-gray-800 font-semibold text-gray-200 border border-gray-700 text-left">{children}</th>
+                ),
+                td: ({ children }) => (
+                    <td className="px-3 py-2 border border-gray-700 text-gray-300">{children}</td>
                 ),
             }}
         >
             {content}
         </ReactMarkdown>
     );
+
+    const renderPart = (text, index) => {
+        const subParts = splitOnExcerpts(text);
+        return subParts.map((sub, si) =>
+            sub.type === 'excerpt'
+                ? renderExcerpt(sub.content, `${index}-${si}`)
+                : renderMarkdown(sub.content, `${index}-${si}`)
+        );
+    };
 
     const parts = content.split(/(<antArtifact.*?<\/antArtifact>)/s);
 
@@ -152,7 +204,7 @@ const MarkdownRenderer = ({ content, isHuman }) => {
                     const artifact = parseAntArtifact(part);
                     return artifact ? renderArtifact(artifact, index) : null;
                 }
-                return renderMarkdown(part, index);
+                return renderPart(part, index);
             })}
         </>
     );
