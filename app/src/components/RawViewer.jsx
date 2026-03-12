@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-const LOCAL_API_ORIGIN = 'http://localhost:4000';
 const PROD_API_ORIGIN = 'https://shareclaude.pages.dev';
 
 function isLocalDevHost() {
@@ -27,9 +26,11 @@ function RawViewer() {
     useEffect(() => {
         const load = async () => {
             try {
-                const origins = isLocalDevHost()
-                    ? [window.location.origin, LOCAL_API_ORIGIN, PROD_API_ORIGIN]
-                    : [window.location.origin];
+                const origins = [...new Set(
+                    isLocalDevHost()
+                        ? [window.location.origin, PROD_API_ORIGIN]
+                        : [window.location.origin]
+                )];
 
                 let data = null;
                 let lastErr = null;

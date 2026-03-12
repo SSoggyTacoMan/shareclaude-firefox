@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import ChatMessage from './ChatMessage';
 import { useParams } from 'react-router-dom';
 
-const LOCAL_API_ORIGIN = 'http://localhost:4000';
 const PROD_API_ORIGIN = 'https://shareclaude.pages.dev';
 
 function isLocalDevHost() {
@@ -30,13 +29,18 @@ function ChatViewer() {
     const [chatData, setChatData] = useState(null);
     const [error, setError] = useState(null);
     const { chatId } = useParams();
+    const rawHref = isLocalDevHost()
+        ? `${PROD_API_ORIGIN}/api/chats/${chatId}/raw`
+        : `/api/chats/${chatId}/raw`;
 
     useEffect(() => {
         const fetchChatData = async () => {
             try {
-                const originsToTry = isLocalDevHost()
-                    ? [window.location.origin, LOCAL_API_ORIGIN, PROD_API_ORIGIN]
-                    : [window.location.origin];
+                const originsToTry = [...new Set(
+                    isLocalDevHost()
+                        ? [window.location.origin, PROD_API_ORIGIN]
+                        : [window.location.origin]
+                )];
 
                 let data = null;
                 let lastError = null;
@@ -80,7 +84,7 @@ function ChatViewer() {
                         </h1>
                         <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
                         <a
-                            href={`/api/chats/${chatId}/raw`}
+                            href={rawHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 text-xs font-mono text-gray-400 border border-gray-600/50 rounded hover:border-gray-400/70 hover:text-gray-300 transition-colors"
