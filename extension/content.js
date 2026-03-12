@@ -513,24 +513,73 @@ function downloadFile(content, filename, mimeType) {
 
 // --- UI injection ---
 
-const BUTTON_CLASS =
-	'inline-flex items-center justify-center relative shrink-0 ring-offset-2 ring-offset-bg-300 ring-accent-main-100 focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:drop-shadow-none text-text-200 border-transparent transition-colors font-styrene active:bg-bg-400 hover:bg-bg-500/40 hover:text-text-100 h-8 w-8 rounded-md active:scale-95 !rounded-lg'
+const BUTTON_STYLE =
+	'display:inline-flex;align-items:center;justify-content:center;height:32px;width:32px;border-radius:8px;border:none;background:none;cursor:pointer;color:var(--text-200, #b4b4b4);transition:background 0.15s;'
 
-function findToolbarAnchor() {
-	return (
-		document.querySelector('button[aria-label="Upload content"]') ||
-		document.querySelector('button[aria-label="Attach files"]') ||
-		document.querySelector('button[aria-label="Attach"]')
-	)
+const BUTTON_HOVER_BG = 'var(--bg-200, rgba(255,255,255,0.08))'
+
+function findToolbarRow() {
+	// Strategy 1: Find the toolbar row via the active (non-inert) fieldset's bottom bar
+	const inputContainer = document.querySelector('[data-chat-input-container="true"]')
+	if (inputContainer) {
+		// Look for the toolbar row inside the non-inert fieldset
+		const fieldsets = inputContainer.querySelectorAll('fieldset:not([inert])')
+		for (const fs of fieldsets) {
+			const row = fs.querySelector('div.relative.flex.gap-2.w-full.items-center')
+			if (row) return row
+		}
+	}
+
+	// Strategy 2: Find via model selector button (very stable data-testid)
+	const modelBtn = document.querySelector('button[data-testid="model-selector-dropdown"]')
+	if (modelBtn) {
+		// Walk up to the toolbar row
+		let el = modelBtn.parentElement
+		while (el) {
+			if (el.classList && el.classList.contains('relative') && el.classList.contains('flex') && el.classList.contains('gap-2') && el.classList.contains('items-center')) {
+				return el
+			}
+			el = el.parentElement
+		}
+	}
+
+	// Strategy 3: Find the + button via aria-label="Toggle menu" inside input area
+	const toggleBtn = document.querySelector('button[aria-label="Toggle menu"]')
+	if (toggleBtn) {
+		let el = toggleBtn.parentElement
+		while (el) {
+			if (el.classList && el.classList.contains('relative') && el.classList.contains('flex') && el.classList.contains('gap-2') && el.classList.contains('items-center')) {
+				return el
+			}
+			el = el.parentElement
+		}
+	}
+
+	return null
+}
+
+function styleButton(btn) {
+	btn.style.cssText = BUTTON_STYLE
+	btn.addEventListener('mouseenter', () => {
+		btn.style.background = BUTTON_HOVER_BG
+	})
+	btn.addEventListener('mouseleave', () => {
+		btn.style.background = 'none'
+	})
 }
 
 function addShareButton() {
+	if (document.querySelector('.share-button')) return
+	const toolbarRow = findToolbarRow()
+	if (!toolbarRow) return
+
 	const button = document.createElement('button')
 	button.innerHTML = shareIconSVG
-	button.className = BUTTON_CLASS
+	styleButton(button)
 	button.type = 'button'
 	button.title = 'Share conversation'
 	button.ariaLabel = 'Share conversation'
+	button.classList.add('share-button')
 
 	button.addEventListener('click', async () => {
 		const conversationId = getConversationId()
@@ -569,20 +618,19 @@ function addShareButton() {
 		button.disabled = false
 	})
 
-	const uploadButton = findToolbarAnchor()
-	if (uploadButton && !document.querySelector('.share-button')) {
-		button.classList.add('share-button')
-		uploadButton.parentElement.appendChild(button)
-	}
+	// Insert before the send button area (last child of toolbar row)
+	const sendArea = toolbarRow.lastElementChild
+	toolbarRow.insertBefore(button, sendArea)
 }
 
 function addExportButton() {
-	const uploadButton = findToolbarAnchor()
-	if (!uploadButton || document.querySelector('.export-button-wrapper')) return
+	if (document.querySelector('.export-button-wrapper')) return
+	const toolbarRow = findToolbarRow()
+	if (!toolbarRow) return
 
 	const button = document.createElement('button')
 	button.innerHTML = downloadIconSVG
-	button.className = BUTTON_CLASS
+	styleButton(button)
 	button.type = 'button'
 	button.title = 'Export conversation'
 	button.ariaLabel = 'Export conversation'
@@ -695,7 +743,9 @@ function addExportButton() {
 		}
 	})
 
-	uploadButton.parentElement.appendChild(wrapper)
+	// Insert before the send button area (last child of toolbar row)
+	const sendArea = toolbarRow.lastElementChild
+	toolbarRow.insertBefore(wrapper, sendArea)
 }
 
 function monitorPageChanges() {
