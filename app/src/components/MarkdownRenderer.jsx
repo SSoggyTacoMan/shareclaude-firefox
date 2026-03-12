@@ -4,55 +4,9 @@ import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import mermaid from 'mermaid';
 import { useEffect, useRef } from 'react';
+import '../../../extension/excerpt-utils.js';
 
-// splits a markdown string on excerpt_from_previous_claude_message.txt blocks
-// returns array of { type: 'markdown'|'excerpt', content: string }
-const EXCERPT_HEADER_RE = /excerpt_from_previous_claude_message\.txt:\s*(?:\r?\n){2}/g;
-const EXCERPT_MARKER = 'excerpt_from_previous_claude_message.txt:';
-const FENCED_EXCERPT_RE = /^```[^\n\r]*\r?\n([\s\S]*?)\r?\n```/;
-
-function splitOnExcerpts(text) {
-    const parts = [];
-    let cursor = 0;
-    const headerRe = new RegExp(EXCERPT_HEADER_RE.source, 'g');
-    let headerMatch;
-
-    while ((headerMatch = headerRe.exec(text)) !== null) {
-        const excerptStart = headerMatch.index;
-        const bodyStart = headerRe.lastIndex;
-
-        if (excerptStart > cursor) {
-            parts.push({ type: 'markdown', content: text.slice(cursor, excerptStart) });
-        }
-
-        const remaining = text.slice(bodyStart);
-        const fencedMatch = remaining.match(FENCED_EXCERPT_RE);
-
-        let quotedText = '';
-        let blockEnd = bodyStart;
-
-        if (fencedMatch) {
-            quotedText = (fencedMatch[1] || '').trim();
-            blockEnd = bodyStart + fencedMatch[0].length;
-        } else {
-            const nextMarkerIndex = text.indexOf(EXCERPT_MARKER, bodyStart);
-            blockEnd = nextMarkerIndex === -1 ? text.length : nextMarkerIndex;
-            quotedText = text.slice(bodyStart, blockEnd).trim();
-        }
-
-        if (quotedText) {
-            parts.push({ type: 'excerpt', content: quotedText });
-        }
-        cursor = blockEnd;
-        headerRe.lastIndex = blockEnd;
-    }
-
-    if (cursor < text.length) {
-        parts.push({ type: 'markdown', content: text.slice(cursor) });
-    }
-
-    return parts.length > 0 ? parts : [{ type: 'markdown', content: text }];
-}
+const splitOnExcerpts = (text) => globalThis.ShareClaudeExcerptUtils.splitTextOnExcerpts(text);
 
 mermaid.initialize({
     startOnLoad: true,

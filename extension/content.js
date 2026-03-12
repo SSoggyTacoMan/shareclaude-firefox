@@ -199,53 +199,11 @@ async function getShareURL(messages) {
 }
 
 // --- export conversion functions ---
-
-const EXCERPT_HEADER_RE = /excerpt_from_previous_claude_message\.txt:\s*(?:\r?\n){2}/g
-const EXCERPT_MARKER = 'excerpt_from_previous_claude_message.txt:'
-const FENCED_EXCERPT_RE = /^```[^\n\r]*\r?\n([\s\S]*?)\r?\n```/
-
-function transformExcerptBlocks(message, transformExcerpt) {
-	if (!message || !message.includes(EXCERPT_MARKER)) return message
-
-	const parts = []
-	let cursor = 0
-	const headerRe = new RegExp(EXCERPT_HEADER_RE.source, 'g')
-	let headerMatch
-
-	while ((headerMatch = headerRe.exec(message)) !== null) {
-		const excerptStart = headerMatch.index
-		const bodyStart = headerRe.lastIndex
-
-		if (excerptStart > cursor) {
-			parts.push(message.slice(cursor, excerptStart))
-		}
-
-		const remaining = message.slice(bodyStart)
-		const fencedMatch = remaining.match(FENCED_EXCERPT_RE)
-
-		let excerptContent = ''
-		let blockEnd = bodyStart
-
-		if (fencedMatch) {
-			excerptContent = (fencedMatch[1] || '').trim()
-			blockEnd = bodyStart + fencedMatch[0].length
-		} else {
-			const nextMarkerIndex = message.indexOf(EXCERPT_MARKER, bodyStart)
-			blockEnd = nextMarkerIndex === -1 ? message.length : nextMarkerIndex
-			excerptContent = message.slice(bodyStart, blockEnd).trim()
-		}
-
-		parts.push(transformExcerpt(excerptContent))
-		cursor = blockEnd
-		headerRe.lastIndex = blockEnd
-	}
-
-	if (cursor < message.length) {
-		parts.push(message.slice(cursor))
-	}
-
-	return parts.join('')
-}
+const transformExcerptBlocks = (message, transformExcerpt) =>
+	globalThis.ShareClaudeExcerptUtils.transformExcerptBlocks(
+		message,
+		transformExcerpt
+	)
 
 function normalizeMessageMarkdown(message) {
 	return transformExcerptBlocks(message, (excerptContent) => {
