@@ -785,7 +785,9 @@ function injectButtons() {
 		if (!exportWrap.contains(e.target)) menu.classList.remove('sc-open')
 	})
 
-	// Append: [native buttons] | [share] [download▾]
+	// Append ShareClaude controls to the end so they appear after Claude's native
+	// controls (action bar is flex justify-end).
+	// Order: [native Share] [divider] [shareBtn] [exportWrap]
 	actionsBar.appendChild(divider)
 	actionsBar.appendChild(shareBtn)
 	actionsBar.appendChild(exportWrap)

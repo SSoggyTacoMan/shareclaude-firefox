@@ -2,6 +2,15 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { chatsSchema } from '../../../../database/schema';
 
+function getReadableError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('no such table: chats')) {
+        return 'Local D1 database is not initialized. Run "npm run db:migrate:local" in /app, then retry.';
+    }
+
+    return 'Something went wrong';
+}
+
 export async function onRequestGet(context) {
     const id = context.params.id;
     try {
@@ -27,6 +36,6 @@ export async function onRequestGet(context) {
         });
     } catch (error) {
         console.log('Error getting raw chat:', error);
-        return new Response('Something went wrong', { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        return new Response(getReadableError(error), { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 }

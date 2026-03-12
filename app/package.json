@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply claudeshare_db --local",
     "db:migrate": "wrangler d1 migrations apply claudeshare_db --remote"
   },
   "dependencies": {
