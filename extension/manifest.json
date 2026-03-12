@@ -22,6 +22,7 @@
                 "https://claude.ai/*"
             ],
             "js": [
+                "excerpt-utils.js",
                 "content.js"
             ]
         }

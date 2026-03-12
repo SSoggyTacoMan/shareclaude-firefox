@@ -4,30 +4,9 @@ import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import mermaid from 'mermaid';
 import { useEffect, useRef } from 'react';
+import '../../../extension/excerpt-utils.js';
 
-// splits a markdown string on excerpt_from_previous_claude_message.txt blocks
-// returns array of { type: 'markdown'|'excerpt', content: string }
-const EXCERPT_RE = /excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|\n?$)/g;
-
-function splitOnExcerpts(text) {
-    const parts = [];
-    let lastIndex = 0;
-    const re = new RegExp(EXCERPT_RE.source, 'g');
-    let match;
-    while ((match = re.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-            parts.push({ type: 'markdown', content: text.slice(lastIndex, match.index) });
-        }
-        // group 1 = fenced code content, group 2 = plain content
-        const quotedText = (match[1] ?? match[2] ?? '').trim();
-        parts.push({ type: 'excerpt', content: quotedText });
-        lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < text.length) {
-        parts.push({ type: 'markdown', content: text.slice(lastIndex) });
-    }
-    return parts.length > 0 ? parts : [{ type: 'markdown', content: text }];
-}
+const splitOnExcerpts = (text) => globalThis.ShareClaudeExcerptUtils.splitTextOnExcerpts(text);
 
 mermaid.initialize({
     startOnLoad: true,
@@ -62,6 +41,40 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         }
         return null;
     };
+
+    const markdownComponents = {
+        code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
+        pre: ({ children }) => (
+            <div className="overflow-hidden rounded-lg">{children}</div>
+        ),
+        a: ({ children, href }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+        ),
+        table: ({ children }) => (
+            <div className="my-4 overflow-x-auto border border-gray-700 rounded-lg">
+                <table className="min-w-full border-collapse">{children}</table>
+            </div>
+        ),
+        thead: ({ children }) => <thead className="bg-gray-800/70">{children}</thead>,
+        th: ({ children }) => (
+            <th className="px-3 py-2 font-semibold text-left text-gray-200 border-b border-r border-gray-700 last:border-r-0">{children}</th>
+        ),
+        td: ({ children }) => (
+            <td className="px-3 py-2 text-gray-300 align-top border-b border-r border-gray-700 last:border-r-0">{children}</td>
+        ),
+        tr: ({ children }) => <tr className="odd:bg-gray-900/40 even:bg-gray-900/10">{children}</tr>
+    };
+
+    const renderMarkdown = (content, index, extraClassName = '') => (
+        <ReactMarkdown
+            key={index}
+            remarkPlugins={[remarkGfm]}
+            className={`prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500 ${extraClassName}`}
+            components={markdownComponents}
+        >
+            {content}
+        </ReactMarkdown>
+    );
 
     const renderArtifact = (artifact, index) => {
         switch (artifact.type) {
@@ -104,6 +117,8 @@ const MarkdownRenderer = ({ content, isHuman }) => {
                 );
 
             case 'text/markdown':
+            case 'text/plain':
+            case 'text/x-markdown':
                 return (
                     <div key={index} className="my-4">
                         <div className="px-4 py-2 text-xs text-gray-200 bg-gray-800">
@@ -150,38 +165,10 @@ const MarkdownRenderer = ({ content, isHuman }) => {
                 </svg>
                 Quoting
             </div>
-            <div className="text-sm text-gray-400 whitespace-pre-wrap">{quotedText}</div>
+            <div className="text-sm text-gray-400">
+                {renderMarkdown(quotedText, `${key}-excerpt`, 'prose-p:text-gray-400 prose-headings:text-gray-300 prose-strong:text-gray-300')}
+            </div>
         </div>
-    );
-
-    const renderMarkdown = (content, index) => (
-        <ReactMarkdown
-            key={index}
-            remarkPlugins={[remarkGfm]}
-            className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500"
-            components={{
-                code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
-                pre: ({ children }) => (
-                    <div className="overflow-hidden rounded-lg">{children}</div>
-                ),
-                a: ({ children, href }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                ),
-                table: ({ children }) => (
-                    <div className="my-4 overflow-x-auto">
-                        <table className="min-w-full border border-collapse border-gray-700">{children}</table>
-                    </div>
-                ),
-                th: ({ children }) => (
-                    <th className="px-3 py-2 font-semibold text-left text-gray-200 bg-gray-800 border border-gray-700">{children}</th>
-                ),
-                td: ({ children }) => (
-                    <td className="px-3 py-2 text-gray-300 border border-gray-700">{children}</td>
-                ),
-            }}
-        >
-            {content}
-        </ReactMarkdown>
     );
 
     const renderPart = (text, index) => {
@@ -189,7 +176,9 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         return subParts.map((sub, si) =>
             sub.type === 'excerpt'
                 ? renderExcerpt(sub.content, `${index}-${si}`)
-                : renderMarkdown(sub.content, `${index}-${si}`)
+                : sub.content.trim()
+                    ? renderMarkdown(sub.content, `${index}-${si}`)
+                    : null
         );
     };
 

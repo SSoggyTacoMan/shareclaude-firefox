@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://shareclaude.pages.dev/sitemap.xml
