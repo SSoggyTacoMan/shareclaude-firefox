@@ -46,7 +46,7 @@ function Home() {
                             </Link>
                         </div>
                         <p className="text-xs text-gray-400 opacity-75">
-                            Also available for Edge, Brave, Opera and other Chromium-based browsers
+                            *Also available for Edge, Brave, Opera and other Chromium-based browsers
                         </p>
                     </div>
                 </div>
