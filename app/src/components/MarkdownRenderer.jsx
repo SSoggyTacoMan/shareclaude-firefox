@@ -123,81 +123,19 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         <ReactMarkdown
             key={index}
             remarkPlugins={[remarkGfm]}
-            className="prose-invert prose-sm max-w-none"
+            className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-th:bg-gray-800 prose-td:border-gray-700 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500 prose-table:border prose-table:border-gray-700"
             components={{
                 code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
                 pre: ({ children }) => (
-                    <div className="px-0 py-0 rounded-lg overflow-hidden">
-                        {children}
-                    </div>
-                ),
-                p: ({ children }) => (
-                    <p className="my-1 leading-relaxed text-gray-200">{children}</p>
+                    <div className="rounded-lg overflow-hidden">{children}</div>
                 ),
                 a: ({ children, href }) => (
-                    <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">
-                        {children}
-                    </a>
-                ),
-                ul: ({ children, className }) => {
-                    if (className === 'contains-task-list') {
-                        return <ul className="list-none my-1 text-gray-200">{children}</ul>;
-                    }
-                    return <ul className="list-disc list-outside ml-4 my-1 text-gray-200">{children}</ul>;
-                },
-                ol: ({ children }) => (
-                    <ol className="list-decimal list-outside ml-4 my-1 text-gray-200">{children}</ol>
-                ),
-                li: ({ children, className }) => {
-                    if (className === 'task-list-item') {
-                        return <li className="flex items-center gap-2 text-gray-200 my-0.5">{children}</li>;
-                    }
-                    return <li className="my-0.5 marker:text-gray-500 text-gray-200">{children}</li>;
-                },
-                input: ({ checked }) => (
-                    <input
-                        type="checkbox"
-                        checked={checked}
-                        readOnly
-                        className="mr-2 rounded border-gray-600 bg-gray-700 checked:bg-blue-500"
-                    />
-                ),
-                blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-gray-700 pl-4 my-2 text-gray-300 italic">
-                        {children}
-                    </blockquote>
-                ),
-                h1: ({ children }) => (
-                    <h1 className="text-2xl font-bold my-3 text-gray-200">{children}</h1>
-                ),
-                h2: ({ children }) => (
-                    <h2 className="text-xl font-semibold my-2 text-gray-200">{children}</h2>
-                ),
-                h3: ({ children }) => (
-                    <h3 className="text-lg font-semibold my-2 text-gray-200">{children}</h3>
+                    <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
                 ),
                 table: ({ children }) => (
                     <div className="overflow-x-auto my-4">
-                        <table className="min-w-full divide-y divide-gray-700 border border-gray-700">
-                            {children}
-                        </table>
+                        <table className="min-w-full divide-y divide-gray-700 border border-gray-700">{children}</table>
                     </div>
-                ),
-                th: ({ children }) => (
-                    <th className="px-4 py-2 bg-gray-800 text-gray-200 font-semibold text-left">
-                        {children}
-                    </th>
-                ),
-                td: ({ children }) => (
-                    <td className="px-4 py-2 border-t border-gray-700 text-gray-300">
-                        {children}
-                    </td>
-                ),
-                hr: () => (
-                    <hr className="my-4 border-gray-700" />
-                ),
-                del: ({ children }) => (
-                    <del className="line-through text-gray-500">{children}</del>
                 ),
             }}
         >
