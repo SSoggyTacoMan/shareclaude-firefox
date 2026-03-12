@@ -1,4 +1,4 @@
-import { Globe, Link2, Github } from 'lucide-react';
+import { Chrome, Globe, Link2, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import thumbnail from '../assets/thumbnail.webp';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
@@ -8,7 +8,7 @@ function Home() {
     return (
         <div className="min-h-screen overflow-x-hidden text-gray-200">
             <main>
-                {/* ero Section */}
+                {/* Hero Section */}
                 <div className="max-w-4xl px-4 py-12 mx-auto text-center sm:px-8 sm:py-24">
                     <h1 className="mb-6 text-4xl font-bold sm:text-6xl">
                         Share Your Claude Chats
@@ -16,18 +16,26 @@ function Home() {
                         <span className="text-shareClaude-accent">With One Click</span>
                     </h1>
                     <p className="max-w-2xl mx-auto mb-12 text-xl text-gray-400">
-                        Instantly share your Claude.AI conversations with anyone. A simple Firefox extension
+                        Instantly share your Claude.AI conversations with anyone. A simple browser extension
                         that makes collaboration effortless.
                     </p>
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex flex-col gap-4 sm:flex-row">
+                            <a
+                                href="https://chromewebstore.google.com/detail/pcpjdbnjhgofgjgegodlnebdnmiddmaa"
+                                target="_blank"
+                                className="inline-flex items-center px-6 py-3 text-lg font-semibold text-white rounded-lg bg-shareClaude-accent hover:bg-shareClaude-accent/80"
+                            >
+                                <Chrome className="w-6 h-6 mr-2" />
+                                Chrome
+                            </a>
                             <a
                                 href="https://addons.mozilla.org/firefox/addon/shareclaude/"
                                 target="_blank"
                                 className="inline-flex items-center px-6 py-3 text-lg font-semibold text-white rounded-lg bg-shareClaude-accent hover:bg-shareClaude-accent/80"
                             >
                                 <Globe className="w-6 h-6 mr-2" />
-                                Add to Firefox
+                                Firefox
                             </a>
                             <Link
                                 to="/c/rhxw367ndulkfr24a5hssm5u"
@@ -37,6 +45,9 @@ function Home() {
                                 Get Share Link
                             </Link>
                         </div>
+                        <p className="text-xs text-gray-400 opacity-75">
+                            Also available for Edge, Brave, Opera and other Chromium-based browsers
+                        </p>
                     </div>
                 </div>
 
@@ -46,7 +57,7 @@ function Home() {
                         <LiteYouTubeEmbed
                             id="fhiBt878T34"
                             thumbnail={thumbnail}
-                            title="ShareClaude - Firefox Extension for Sharing Claude Conversations"
+                            title="ShareClaude - Browser Extension for Sharing Claude Conversations"
                         />
                     </div>
                 </div>
@@ -64,17 +75,17 @@ function Home() {
                             </div>
                             <div className="p-6 text-center rounded-lg bg-shareClaude-backgroundLight">
                                 <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-lg bg-shareClaude-background">
-                                    <Globe className="w-6 h-6 text-shareClaude-accent" />
+                                    <Chrome className="w-6 h-6 text-shareClaude-accent" />
                                 </div>
                                 <h3 className="mb-2 text-xl font-semibold">Seamless Integration</h3>
-                                <p className="text-gray-400">Integrates perfectly with Claude.AI's interface, providing a native sharing experience.</p>
+                                <p className="text-gray-400">Integrates perfectly with Claude.AI&apos;s interface, providing a native sharing experience.</p>
                             </div>
                             <div className="p-6 text-center rounded-lg bg-shareClaude-backgroundLight">
                                 <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-lg bg-shareClaude-background">
                                     <Github className="w-6 h-6 text-shareClaude-accent" />
                                 </div>
                                 <h3 className="mb-2 text-xl font-semibold">Open Source</h3>
-                                <p className="text-gray-400">Fully Open-source, contribute to improve sharing.</p>
+                                <p className="text-gray-400">Fully open-source and free. Contribute to improve sharing. Available on Chrome, Firefox, and all major browsers.</p>
                             </div>
                         </div>
                     </div>
