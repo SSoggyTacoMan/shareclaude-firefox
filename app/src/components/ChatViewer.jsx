@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import ChatMessage from './ChatMessage';
 import { useParams } from 'react-router-dom';
 
+function getApiOrigin() {
+    const { hostname, origin } = window.location;
+    return hostname === 'localhost' || hostname === '127.0.0.1'
+        ? 'https://shareclaude.pages.dev'
+        : origin;
+}
+
 function ChatViewer() {
     const [chatData, setChatData] = useState(null);
     const [error, setError] = useState(null);
@@ -10,11 +17,18 @@ function ChatViewer() {
     useEffect(() => {
         const fetchChatData = async () => {
             try {
-                const apiURL = `${window.location.origin}/api/chats`;
+                const apiURL = `${getApiOrigin()}/api/chats`;
                 const response = await fetch(`${apiURL}/${chatId}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
+
+                const contentType = response.headers.get('content-type') ?? '';
+                if (!contentType.includes('application/json')) {
+                    const body = await response.text();
+                    throw new Error(body.slice(0, 120) || 'API returned a non-JSON response');
+                }
+
                 const data = await response.json();
                 document.title = data?.title ?? 'Chats - ShareClaude';
                 setChatData(data);
@@ -42,7 +56,7 @@ function ChatViewer() {
                         </h1>
                         <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
                         <a
-                            href={`${window.location.origin}/api/chats/${chatId}/raw`}
+                            href={`${getApiOrigin()}/api/chats/${chatId}/raw`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 text-xs font-mono text-gray-400 border border-gray-600/50 rounded hover:border-gray-400/70 hover:text-gray-300 transition-colors"
