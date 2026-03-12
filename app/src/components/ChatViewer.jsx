@@ -10,7 +10,7 @@ function ChatViewer() {
     useEffect(() => {
         const fetchChatData = async () => {
             try {
-                const apiURL = "https://shareclaude.pages.dev/api/chats";
+                const apiURL = `${window.location.origin}/api/chats`;
                 const response = await fetch(`${apiURL}/${chatId}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
@@ -33,8 +33,8 @@ function ChatViewer() {
     );
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <main className="flex-grow w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col min-h-screen">
+            <main className="flex-grow w-full max-w-3xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
                 {chatData && (
                     <header className="mb-6 text-center">
                         <h1 className="text-2xl font-bold text-gray-100">
@@ -42,7 +42,7 @@ function ChatViewer() {
                         </h1>
                         <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
                         <a
-                            href={`https://shareclaude.pages.dev/api/chats/${chatId}/raw`}
+                            href={`${window.location.origin}/api/chats/${chatId}/raw`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 text-xs font-mono text-gray-400 border border-gray-600/50 rounded hover:border-gray-400/70 hover:text-gray-300 transition-colors"
@@ -61,7 +61,7 @@ function ChatViewer() {
                         ))
                     ) : (
                         <div className="flex justify-center py-16">
-                            <div className="w-10 h-10 border-4 border-shareClaude-accent border-t-transparent rounded-full animate-spin" />
+                            <div className="w-10 h-10 border-4 rounded-full border-shareClaude-accent border-t-transparent animate-spin" />
                         </div>
                     )}
                 </section>
