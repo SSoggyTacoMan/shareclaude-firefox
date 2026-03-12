@@ -1,11 +1,12 @@
+import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import mermaid from 'mermaid';
 import { useEffect, useRef } from 'react';
 
-// Splits a markdown string on excerpt_from_previous_claude_message.txt blocks
-// Returns array of { type: 'markdown'|'excerpt', content: string }
+// splits a markdown string on excerpt_from_previous_claude_message.txt blocks
+// returns array of { type: 'markdown'|'excerpt', content: string }
 const EXCERPT_RE = /excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|\n?$)/g;
 
 function splitOnExcerpts(text) {
@@ -28,7 +29,6 @@ function splitOnExcerpts(text) {
     return parts.length > 0 ? parts : [{ type: 'markdown', content: text }];
 }
 
-// Initialize mermaid with dark theme config
 mermaid.initialize({
     startOnLoad: true,
     theme: 'dark'
@@ -38,7 +38,6 @@ const MarkdownRenderer = ({ content, isHuman }) => {
     const mermaidRef = useRef(null);
 
     useEffect(() => {
-        // Re-render all mermaid diagrams when content changes
         if (mermaidRef.current) {
             mermaid.init(undefined, '.mermaid');
         }
@@ -50,7 +49,6 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         const titleMatch = text.match(/title="([^"]*)"/);
         const languageMatch = text.match(/language="([^"]*)"/);
 
-        // Extract content between opening and closing tags
         const contentMatch = text.match(/<antArtifact[^>]*>([\s\S]*?)<\/antArtifact>/);
 
         if (identifierMatch && typeMatch && titleMatch && contentMatch) {
@@ -70,10 +68,10 @@ const MarkdownRenderer = ({ content, isHuman }) => {
             case 'application/vnd.ant.mermaid':
                 return (
                     <div key={index} className="my-4" ref={mermaidRef}>
-                        <div className="bg-gray-800 px-4 py-2 text-xs text-gray-200">
+                        <div className="px-4 py-2 text-xs text-gray-200 bg-gray-800">
                             {artifact.title}
                         </div>
-                        <div className="bg-gray-900 p-4">
+                        <div className="p-4 bg-gray-900">
                             <pre className="mermaid">
                                 {artifact.content}
                             </pre>
@@ -108,10 +106,10 @@ const MarkdownRenderer = ({ content, isHuman }) => {
             case 'text/markdown':
                 return (
                     <div key={index} className="my-4">
-                        <div className="bg-gray-800 px-4 py-2 text-xs text-gray-200">
+                        <div className="px-4 py-2 text-xs text-gray-200 bg-gray-800">
                             {artifact.title}
                         </div>
-                        <div className="bg-gray-900 p-4">
+                        <div className="p-4 bg-gray-900">
                             {renderMarkdown(artifact.content)}
                         </div>
                     </div>
@@ -164,21 +162,21 @@ const MarkdownRenderer = ({ content, isHuman }) => {
             components={{
                 code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
                 pre: ({ children }) => (
-                    <div className="rounded-lg overflow-hidden">{children}</div>
+                    <div className="overflow-hidden rounded-lg">{children}</div>
                 ),
                 a: ({ children, href }) => (
                     <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
                 ),
                 table: ({ children }) => (
-                    <div className="overflow-x-auto my-4">
-                        <table className="min-w-full border-collapse border border-gray-700">{children}</table>
+                    <div className="my-4 overflow-x-auto">
+                        <table className="min-w-full border border-collapse border-gray-700">{children}</table>
                     </div>
                 ),
                 th: ({ children }) => (
-                    <th className="px-3 py-2 bg-gray-800 font-semibold text-gray-200 border border-gray-700 text-left">{children}</th>
+                    <th className="px-3 py-2 font-semibold text-left text-gray-200 bg-gray-800 border border-gray-700">{children}</th>
                 ),
                 td: ({ children }) => (
-                    <td className="px-3 py-2 border border-gray-700 text-gray-300">{children}</td>
+                    <td className="px-3 py-2 text-gray-300 border border-gray-700">{children}</td>
                 ),
             }}
         >
@@ -208,6 +206,11 @@ const MarkdownRenderer = ({ content, isHuman }) => {
             })}
         </>
     );
+};
+
+MarkdownRenderer.propTypes = {
+    content: PropTypes.string.isRequired,
+    isHuman: PropTypes.bool
 };
 
 export default MarkdownRenderer;

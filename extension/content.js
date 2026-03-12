@@ -2,11 +2,11 @@ const PAGE_URL = 'https://shareclaude.pages.dev'
 const CLAUDE_API_URL = 'https://claude.ai/api/organizations'
 let organizationId = ''
 
-// Store artifacts content globally for updates
 const artifactsCache = new Map()
 
+let debugCandidatesLogged = false
+
 async function getOrganizationId() {
-	// If organizationId is already set, return it
 	if (organizationId) return organizationId
 	try {
 		const response = await fetch(CLAUDE_API_URL, {
@@ -65,7 +65,6 @@ function processArtifact(item) {
 
 	if (!id) return ''
 
-	// Build artifact properties
 	const artifactProps = {
 		identifier: id,
 		type: type || artifactsCache.get(id)?.artifactType,
@@ -78,7 +77,7 @@ function processArtifact(item) {
 		.map(([key, value]) => `${key}="${value}"`)
 		.join(' ')
 
-	// Handle content updates
+	// handle content updates
 	if (command === 'update' && old_str && new_str) {
 		const artifactData = artifactsCache.get(id)
 		if (!artifactData?.content) return ''
@@ -88,7 +87,7 @@ function processArtifact(item) {
 		return formatArtifactOutput(propString, artifactData.content)
 	}
 
-	// Handle content creation/rewrite or otherwise
+	// handle content creation/rewrite
 	if (content) {
 		const artifactData =
 			command === 'rewrite'
@@ -120,7 +119,7 @@ function processContentItem(item) {
 			} else if (item.name === 'repl') {
 				return processREPL(item)
 			}
-			//handle other tool_use items
+			// handle other tool_use items
 			return ''
 		default:
 			return ''
@@ -193,7 +192,6 @@ async function getShareURL(messages) {
 		}
 
 		const { id } = await response.json()
-		// Clear artifacts content after successful share
 		artifactsCache.clear()
 		return `${PAGE_URL}/c/${id}`
 	} catch (error) {
@@ -202,7 +200,7 @@ async function getShareURL(messages) {
 	}
 }
 
-// --- Export conversion functions ---
+// --- export conversion functions ---
 
 function convertToMarkdown(title, messages) {
 	let md = `# ${title}\n\n`
@@ -236,14 +234,14 @@ function convertToHTML(title, messages) {
 		str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 	function markdownToHTML(text) {
-		// 1. Save fenced code blocks
+		// 1. save fenced code blocks
 		const codeBlocks = []
 		text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
 			const idx = codeBlocks.push({ lang, code: esc(code) }) - 1
 			return `\x00CODE${idx}\x00`
 		})
 
-		// 2. Handle excerpt blocks (may reference a saved code block placeholder)
+		// 2. handle excerpt blocks (may reference a saved code block placeholder)
 		text = text.replace(
 			/excerpt_from_previous_claude_message\.txt:\n\n(?:\x00CODE(\d+)\x00|([\s\S]*?))(?=\n\n|$)/g,
 			(_, codeIdx, plainContent) => {
@@ -258,14 +256,14 @@ function convertToHTML(title, messages) {
 			}
 		)
 
-		// 3. Save inline code
+		// 3. save inline code
 		const inlineCodes = []
 		text = text.replace(/`([^`\n]+)`/g, (_, code) => {
 			const idx = inlineCodes.push(esc(code)) - 1
 			return `\x00IC${idx}\x00`
 		})
 
-		// 4. Tables
+		// 4. tables
 		text = text.replace(
 			/((?:[^\n]*\|[^\n]*\n)+)/g,
 			(block) => {
@@ -283,33 +281,33 @@ function convertToHTML(title, messages) {
 			}
 		)
 
-		// 5. Headings
+		// 5. headings
 		text = text.replace(/^(#{1,6})\s+(.+)$/gm, (_, h, content) =>
 			`<h${h.length}>${applyInline(content)}</h${h.length}>`
 		)
 
-		// 6. Blockquotes
+		// 6. blockquotes
 		text = text.replace(/^((?:>.*\n?)+)/gm, (match) => {
 			const inner = match.replace(/^>\s?/gm, '').trim()
 			return `<blockquote>${applyInline(inner)}</blockquote>`
 		})
 
-		// 7. Unordered lists
+		// 7. unordered lists
 		text = text.replace(/^((?:[*\-]\s.+\n?)+)/gm, (block) => {
 			const items = block.trim().split('\n').map(l => l.replace(/^[*\-]\s/, ''))
 			return `<ul>${items.map(i => `<li>${applyInline(i)}</li>`).join('')}</ul>`
 		})
 
-		// 8. Ordered lists
+		// 8. ordered lists
 		text = text.replace(/^((?:\d+\.\s.+\n?)+)/gm, (block) => {
 			const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, ''))
 			return `<ol>${items.map(i => `<li>${applyInline(i)}</li>`).join('')}</ol>`
 		})
 
-		// 9. Horizontal rules
+		// 9. horizontal rules
 		text = text.replace(/^[-*_]{3,}$/gm, '<hr>')
 
-		// 10. Paragraphs: wrap non-empty, non-block lines
+		// 10. paragraphs: wrap non-empty, non-block lines
 		text = text
 			.split(/\n{2,}/)
 			.map((para) => {
@@ -321,7 +319,7 @@ function convertToHTML(title, messages) {
 			})
 			.join('\n')
 
-		// 11. Restore code blocks
+		// 11. restore code blocks
 		text = text.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
 			const b = codeBlocks[parseInt(idx)]
 			if (!b) return ''
@@ -436,7 +434,7 @@ function convertToRTF(title, messages) {
 	return rtf
 }
 
-// --- Minimal ZIP builder for DOCX generation ---
+// --- minimal zip builder for docx generation ---
 
 let _crc32Table = null
 function getCRC32Table() {
@@ -472,13 +470,13 @@ function createMinimalZip(files) {
 		const data = file.content
 		const crc = crc32(data)
 
-		// Local file header (30 bytes + filename)
+		// local file header (30 bytes + filename)
 		const local = new Uint8Array(30 + nameBytes.length)
 		const lv = new DataView(local.buffer)
 		lv.setUint32(0, 0x04034b50, true)
 		lv.setUint16(4, 20, true)
 		lv.setUint16(6, 0, true)
-		lv.setUint16(8, 0, true) // STORE
+		lv.setUint16(8, 0, true) // store
 		lv.setUint16(10, 0, true)
 		lv.setUint16(12, 0, true)
 		lv.setUint32(14, crc, true)
@@ -488,7 +486,7 @@ function createMinimalZip(files) {
 		lv.setUint16(28, 0, true)
 		local.set(nameBytes, 30)
 
-		// Central directory entry (46 bytes + filename)
+		// central directory entry (46 bytes + filename)
 		const central = new Uint8Array(46 + nameBytes.length)
 		const cv = new DataView(central.buffer)
 		cv.setUint32(0, 0x02014b50, true)
@@ -519,7 +517,7 @@ function createMinimalZip(files) {
 	let centralSize = 0
 	centralHeaders.forEach((h) => (centralSize += h.length))
 
-	// End of central directory (22 bytes)
+	// end of central directory (22 bytes)
 	const eocd = new Uint8Array(22)
 	const ev = new DataView(eocd.buffer)
 	ev.setUint32(0, 0x06054b50, true)
@@ -572,23 +570,23 @@ function convertToDOCX(title, messages) {
 
 	let paragraphs = ''
 
-	// Title
+	// title
 	paragraphs += `<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="48"/></w:rPr><w:t xml:space="preserve">${escapeXML(title)}</w:t></w:r></w:p>`
 
 	messages.forEach(({ source, message }) => {
 		const role = source === 'user' ? 'You' : 'Claude'
 		const color = source === 'user' ? '666666' : 'D97757'
 
-		// Role header
+		// role header
 		paragraphs += `<w:p><w:r><w:rPr><w:b/><w:color w:val="${color}"/><w:sz w:val="28"/></w:rPr><w:t>${escapeXML(role)}</w:t></w:r></w:p>`
 
-		// Message lines
+		// message lines
 		const lines = stripMarkdown(message).split('\n')
 		lines.forEach((line) => {
 			paragraphs += `<w:p><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${escapeXML(line)}</w:t></w:r></w:p>`
 		})
 
-		// Separator
+		// separator
 		paragraphs += `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="CCCCCC"/></w:pBdr></w:pPr></w:p>`
 	})
 
@@ -634,13 +632,14 @@ function downloadFile(content, filename, mimeType) {
 	URL.revokeObjectURL(url)
 }
 
-// --- UI injection ---
+// --- ui injection ---
 
 function injectStyles() {
 	if (document.getElementById('sc-styles')) return
 	const s = document.createElement('style')
 	s.id = 'sc-styles'
 	s.textContent = `
+.sc-controls{display:inline-flex;align-items:center;flex-shrink:0}
 .sc-divider{width:2px;height:22px;margin:0 8px 0 6px;background:currentColor;opacity:0.22;border-radius:999px;align-self:center;flex-shrink:0}
 .sc-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;border-radius:6px;background:transparent;color:inherit;cursor:pointer;transition:background 0.1s}
 .sc-icon-btn:hover{background:var(--bg-200, rgba(128,128,128,0.1))}
@@ -670,7 +669,6 @@ function detectTheme() {
 }
 
 function findActionsBar() {
-	// Try known selectors in order of preference
 	return (
 		document.querySelector('[data-testid="wiggle-controls-actions"]') ||
 		document.querySelector('[data-testid$="-controls-actions"]') ||
@@ -681,30 +679,51 @@ function findActionsBar() {
 	)
 }
 
-function injectButtons() {
-	if (document.querySelector('.sc-divider')) return
+function ensureControlsPosition(actionsBar, controlsWrap) {
+	if (!actionsBar || !controlsWrap) return
+	if (controlsWrap.parentElement !== actionsBar) {
+		actionsBar.appendChild(controlsWrap)
+		return
+	}
+	if (actionsBar.lastElementChild !== controlsWrap) {
+		actionsBar.appendChild(controlsWrap)
+	}
+}
 
+function injectButtons() {
 	const actionsBar = findActionsBar()
 	if (!actionsBar) {
-		// Dump available testids near Claude message areas to help diagnose selector changes
-		const ids = [...document.querySelectorAll('[data-testid]')]
-			.map((el) => el.dataset.testid)
-			.filter((id) => id && (id.includes('wiggle') || id.includes('action') || id.includes('control') || id.includes('message')))
-		if (ids.length) console.debug('[ShareClaude] candidate testids:', [...new Set(ids)])
+		if (!debugCandidatesLogged) {
+			const ids = [...document.querySelectorAll('[data-testid]')]
+				.map((el) => el.dataset.testid)
+				.filter((id) => id && (id.includes('wiggle') || id.includes('action') || id.includes('control') || id.includes('message')))
+			if (ids.length) {
+				console.debug('[ShareClaude] candidate testids:', [...new Set(ids)])
+				debugCandidatesLogged = true
+			}
+		}
 		return
 	}
 
 	console.debug('[ShareClaude] injecting into:', actionsBar.dataset.testid)
 	injectStyles()
 
+	const existingControls = document.querySelector('.sc-controls')
+	if (existingControls) {
+		ensureControlsPosition(actionsBar, existingControls)
+		return
+	}
+
 	const shareSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>'
 	const downloadSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
 
-	// --- Divider ---
+	const controlsWrap = document.createElement('div')
+	controlsWrap.className = 'sc-controls'
+
 	const divider = document.createElement('div')
 	divider.className = 'sc-divider'
 
-	// --- Share button (direct action, no dropdown) ---
+	// --- share button ---
 	const shareBtn = document.createElement('button')
 	shareBtn.type = 'button'
 	shareBtn.className = 'sc-icon-btn'
@@ -727,7 +746,7 @@ function injectButtons() {
 		shareBtn.classList.remove('sc-loading')
 	})
 
-	// --- Download button (opens format picker dropdown) ---
+	// --- download button ---
 	const exportWrap = document.createElement('div')
 	exportWrap.className = 'sc-export-wrap'
 
@@ -785,17 +804,17 @@ function injectButtons() {
 		if (!exportWrap.contains(e.target)) menu.classList.remove('sc-open')
 	})
 
-	// Append: [native buttons] | [share] [download▾]
-	actionsBar.appendChild(divider)
-	actionsBar.appendChild(shareBtn)
-	actionsBar.appendChild(exportWrap)
+	controlsWrap.appendChild(divider)
+	controlsWrap.appendChild(shareBtn)
+	controlsWrap.appendChild(exportWrap)
+	ensureControlsPosition(actionsBar, controlsWrap)
 }
 
 function monitorPageChanges() {
+	let debounceTimer = null
 	const observer = new MutationObserver(() => {
-		if (!document.querySelector('.sc-divider')) {
-			injectButtons()
-		}
+		clearTimeout(debounceTimer)
+		debounceTimer = setTimeout(injectButtons, 300)
 	})
 	observer.observe(document.body, { childList: true, subtree: true })
 }

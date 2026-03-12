@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { chatsSchema } from '../../../../database/schema';
+import { getReadableError } from '../../utils';
 
 export async function onRequestGet(context) {
     const id = context.params.id;
@@ -27,6 +28,6 @@ export async function onRequestGet(context) {
         });
     } catch (error) {
         console.log('Error getting raw chat:', error);
-        return new Response('Something went wrong', { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        return new Response(getReadableError(error), { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 }

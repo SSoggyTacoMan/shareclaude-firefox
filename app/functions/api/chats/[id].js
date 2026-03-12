@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { chatsSchema } from '../../../database/schema';
+import { getReadableError } from '../utils';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -24,6 +25,6 @@ export async function onRequestGet(context) {
         return Response.json(chat, { headers: corsHeaders });
     } catch (error) {
         console.log("Error getting a chat: ", error)
-        return Response.json({ msg: "something went wrong!" }, { status: 500, headers: corsHeaders });
+        return Response.json({ msg: getReadableError(error) }, { status: 500, headers: corsHeaders });
     }
 }

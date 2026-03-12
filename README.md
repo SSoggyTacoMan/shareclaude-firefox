@@ -1,27 +1,24 @@
 # [ShareClaude](https://shareclaude.pages.dev)
 
-<div align="center">
-
-Browser Extension to share and export your [Claude](https://claude.ai) chats with one click.
+Browser extension to share and export your [Claude](https://claude.ai) chats with one click.
 
 [![Visit ShareClaude](https://img.shields.io/badge/Visit-ShareClaude-blue.svg?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNEOTc3NTciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zaGFyZS0yIj48Y2lyY2xlIGN4PSIxOCIgY3k9IjUiIHI9IjMiLz48Y2lyY2xlIGN4PSI2IiBjeT0iMTIiIHI9IjMiLz48Y2lyY2xlIGN4PSIxOCIgY3k9IjE5IiByPSIzIi8+PGxpbmUgeDE9IjguNTkiIHgyPSIxNS40MiIgeTE9IjEzLjUxIiB5Mj0iMTcuNDkiLz48bGluZSB4MT0iMTUuNDEiIHgyPSI4LjU5IiB5MT0iNi41MSIgeTI9IjEwLjQ5Ii8+PC9zdmc+)](https://shareclaude.pages.dev)
 [![Platform Chrome](https://img.shields.io/badge/Platform-Chrome-yellow?logo=google-chrome&logoColor=yellow)](https://chrome.google.com/webstore/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa)
-![Platform Firefox](https://img.shields.io/badge/Platform-Firefox-orange?logo=firefox-browser&logoColor=orange)
+[![Platform Firefox](https://img.shields.io/badge/Platform-Firefox-orange?logo=firefox-browser&logoColor=orange)](https://addons.mozilla.org/en-US/firefox/addon/shareclaude/)
 
-## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) OR [Download from Firefox Add-on Store](https://addons.mozilla.org/en-US/firefox/addon/shareclaude/)
-</div>
-
+## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) OR [Download from Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/shareclaude/)
 
 ## Features
 
 - One-click sharing of Claude AI conversations
 - Instant URL generation
-- Support syntax highlighting for code and Artifacts including Mermaid & JSON
+- Supports syntax highlighting for code and artifacts, including Mermaid and JSON
 - Works directly with Claude's web interface
 
 ## How It Works
-When you share a conversation, the extension stores the converastions to ShareClaude's database (not Claude). Each conversation gets a unique URL, similar to an unlisted YouTube video. The URL can be shared with anyone, but it won’t show up in search results on Google.
-Further conversations are served from ShareClaude’s database, not directly from Claude.
+
+When you share a conversation, the extension stores the conversation in ShareClaude's database, not Claude's. Each conversation gets a unique URL, similar to an unlisted YouTube video. The URL can be shared with anyone, but it won't show up in Google search results.
+Shared conversations are served from ShareClaude's database, not directly from Claude.
 
 *Important: While the URL is private and not searchable, anyone with the URL can still view the conversation. Please avoid sharing sensitive or personal information.*
 
@@ -31,8 +28,8 @@ Further conversations are served from ShareClaude’s database, not directly fro
 2. Start or continue a conversation with Claude
 3. Click the **ShareClaude** button in the top-right corner (next to Claude's native Share button, separated by a divider)
 4. A menu appears with options:
-   - **Share to ShareClaude:** uploads the conversation and copies the link to your clipboard (alternative to Claude native share option)
-   - **Export:** download the conversation as HTML, Markdown, Plain Text, Word (.docx), or Rich Text (.rtf)
+   - **Share to ShareClaude:** Uploads the conversation and copies the link to your clipboard as an alternative to Claude's native share option
+   - **Export:** Downloads the conversation as HTML, Markdown, plain text, Word (.docx), or Rich Text Format (.rtf)
 
 ## Tech Stack
 
@@ -40,33 +37,36 @@ Further conversations are served from ShareClaude’s database, not directly fro
 - **Backend**: Cloudflare Workers
 - **Database**: Cloudflare D1
 
-
 ## Installation
 
-### Chrome 
+### Chrome
 
 Install from [Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) **(Recommended)**
 
 **OR** for development/debugging:
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/rohit1kumar/shareclaude.git
    ```
+
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right corner
 4. Click "Load unpacked" and select the `extension` folder from the cloned repository
 
 ### Firefox
 
-Install from [Firefox Add-ons Store](https://addons.mozilla.org/firefox/addon/shareclaude/) **(Recommended)**
+Install from [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/shareclaude/) **(Recommended)**
 
 **OR** for development/debugging:
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/rohit1kumar/shareclaude.git
    ```
+
 2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on..."
 4. Select the `manifest.json` file inside the `extension` folder from the cloned repository
@@ -74,6 +74,7 @@ Install from [Firefox Add-ons Store](https://addons.mozilla.org/firefox/addon/sh
 ## Contributing
 
 Contributions are welcome! Feel free to:
+
 - Report bugs
 - Suggest new features
 - Submit pull requests
@@ -86,12 +87,14 @@ Contributions are welcome! Feel free to:
 
 ## Star History
 
+<!-- markdownlint-disable MD033 -->
 <a href="https://www.star-history.com/?repos=rohit1kumar%2Fshareclaude&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=rohit1kumar/shareclaude&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=rohit1kumar/shareclaude&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=rohit1kumar/shareclaude&type=date&legend=top-left" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=rohit1kumar/shareclaude&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=rohit1kumar/shareclaude&type=date&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/image?repos=rohit1kumar/shareclaude&type=date&legend=top-left" />
  </picture>
 </a>
+<!-- markdownlint-enable MD033 -->
 
 Made with ☕ for the Claude community

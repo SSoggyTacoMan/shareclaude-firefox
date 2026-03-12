@@ -2,34 +2,62 @@ import { useEffect, useState } from 'react';
 import ChatMessage from './ChatMessage';
 import { useParams } from 'react-router-dom';
 
-function getApiOrigin() {
-    const { hostname, origin } = window.location;
-    return hostname === 'localhost' || hostname === '127.0.0.1'
-        ? 'https://shareclaude.pages.dev'
-        : origin;
+const PROD_API_ORIGIN = 'https://shareclaude.pages.dev';
+
+function isLocalDevHost() {
+    const { hostname } = window.location;
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
+async function fetchChatFromOrigin(apiOrigin, chatId) {
+    const response = await fetch(`${apiOrigin}/api/chats/${chatId}`);
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+        const body = await response.text();
+        throw new Error(body.slice(0, 120) || 'API returned a non-JSON response');
+    }
+
+    return await response.json();
 }
 
 function ChatViewer() {
     const [chatData, setChatData] = useState(null);
     const [error, setError] = useState(null);
     const { chatId } = useParams();
+    const rawHref = isLocalDevHost()
+        ? `${PROD_API_ORIGIN}/api/chats/${chatId}/raw`
+        : `/api/chats/${chatId}/raw`;
 
     useEffect(() => {
         const fetchChatData = async () => {
             try {
-                const apiURL = `${getApiOrigin()}/api/chats`;
-                const response = await fetch(`${apiURL}/${chatId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                const originsToTry = [...new Set(
+                    isLocalDevHost()
+                        ? [window.location.origin, PROD_API_ORIGIN]
+                        : [window.location.origin]
+                )];
+
+                let data = null;
+                let lastError = null;
+
+                for (const origin of originsToTry) {
+                    try {
+                        data = await fetchChatFromOrigin(origin, chatId);
+                        break;
+                    } catch (originError) {
+                        lastError = originError;
+                    }
                 }
 
-                const contentType = response.headers.get('content-type') ?? '';
-                if (!contentType.includes('application/json')) {
-                    const body = await response.text();
-                    throw new Error(body.slice(0, 120) || 'API returned a non-JSON response');
+                if (!data) {
+                    throw lastError ?? new Error('Unable to load chat data');
                 }
 
-                const data = await response.json();
                 document.title = data?.title ?? 'Chats - ShareClaude';
                 setChatData(data);
             } catch (err) {
@@ -56,7 +84,7 @@ function ChatViewer() {
                         </h1>
                         <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
                         <a
-                            href={`${getApiOrigin()}/api/chats/${chatId}/raw`}
+                            href={rawHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 text-xs font-mono text-gray-400 border border-gray-600/50 rounded hover:border-gray-400/70 hover:text-gray-300 transition-colors"
