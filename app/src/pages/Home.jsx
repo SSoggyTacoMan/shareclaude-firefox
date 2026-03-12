@@ -52,7 +52,7 @@ function Home() {
                 </div>
 
                 {/* YouTube Video */}
-                <div className="max-w-4xl px-4 mx-auto my-2 sm:px-8">
+                <div className="max-w-4xl px-4 mx-auto my-0 sm:px-8">
                     <div className="overflow-hidden transition-all duration-300 border border-gray-600 shadow-lg aspect-video rounded-xl shadow-shareClaude-accent/50 hover:shadow-shareClaude-accent/80">
                         <LiteYouTubeEmbed
                             id="fhiBt878T34"
@@ -63,7 +63,7 @@ function Home() {
                 </div>
 
                 {/* Feature Card */}
-                <div className="py-4">
+                <div className="-mt-6 py-4">
                     <div className="max-w-4xl px-4 mx-auto sm:px-8">
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                             <div className="p-6 text-center rounded-lg bg-shareClaude-backgroundLight">
