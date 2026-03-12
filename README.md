@@ -29,10 +29,9 @@ Further conversations are served from ShareClaude’s database, not directly fro
 
 1. Open [Claude](https://claude.ai) in your browser
 2. Start or continue a conversation with Claude
-3. Click the **Share & Export** button in the top-right corner (replaces Claude's native Share button)
-4. A dropdown menu appears with three sections:
-   - **Share via Claude** — opens Claude's built-in share dialog
-   - **Share to ShareClaude** — uploads the conversation to ShareClaude and copies the link to your clipboard
+3. Click the **ShareClaude** button in the top-right corner (next to Claude's native Share button, separated by a divider)
+4. A menu appears with options:
+   - **Share to ShareClaude** — uploads the conversation and copies the link to your clipboard
    - **Export** — download the conversation as Markdown, Plain Text, HTML, Word (.docx), or Rich Text (.rtf)
 
 ## Tech Stack

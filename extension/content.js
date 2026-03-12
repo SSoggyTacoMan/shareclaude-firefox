@@ -516,16 +516,27 @@ function downloadFile(content, filename, mimeType) {
 
 // --- UI injection ---
 
+function getIconURL() {
+	return typeof browser !== 'undefined'
+		? browser.runtime.getURL('images/icon-128.png')
+		: chrome.runtime.getURL('images/icon-128.png')
+}
+
 function injectStyles() {
 	if (document.getElementById('sc-styles')) return
 	const s = document.createElement('style')
 	s.id = 'sc-styles'
 	s.textContent = `
-.sc-wrap{position:relative;display:inline-flex}
-.sc-menu{position:absolute;top:calc(100% + 6px);right:0;border-radius:12px;padding:4px;z-index:50000;min-width:220px;display:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.sc-divider{width:1px;height:20px;margin:0 2px;background:var(--border-300, rgba(128,128,128,0.25));flex-shrink:0}
+.sc-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 10px;border:0.5px solid var(--border-300, rgba(128,128,128,0.25));border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;position:relative;transition:background 0.1s}
+.sc-btn:hover{background:var(--bg-200, rgba(128,128,128,0.08))}
+.sc-btn:active{transform:scale(0.985)}
+.sc-btn img{width:16px;height:16px;border-radius:2px}
+.sc-btn.sc-loading{opacity:0.5;pointer-events:none}
+.sc-menu{position:absolute;top:calc(100% + 6px);right:0;border-radius:12px;padding:4px;z-index:50001;min-width:220px;display:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .sc-menu.sc-open{display:block}
-.sc-menu[data-theme="light"]{background:rgba(255,255,255,0.92);border:1px solid rgba(0,0,0,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.12);color:#333}
-.sc-menu[data-theme="dark"]{background:rgba(40,40,40,0.92);border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.4);color:#e0e0e0}
+.sc-menu[data-theme="light"]{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.12);color:#333}
+.sc-menu[data-theme="dark"]{background:rgba(40,40,40,0.95);border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.4);color:#e0e0e0}
 .sc-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;background:none;border:none;color:inherit;font-size:13px;text-align:left;cursor:pointer;border-radius:8px;font-family:inherit;line-height:1.4}
 .sc-menu[data-theme="light"] .sc-item:hover{background:rgba(0,0,0,0.06)}
 .sc-menu[data-theme="dark"] .sc-item:hover{background:rgba(255,255,255,0.08)}
@@ -536,7 +547,7 @@ function injectStyles() {
 .sc-lbl{padding:6px 12px 2px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
 .sc-menu[data-theme="light"] .sc-lbl{color:#999}
 .sc-menu[data-theme="dark"] .sc-lbl{color:#777}
-.sc-item.sc-loading{opacity:0.5;pointer-events:none}
+.sc-wrap{position:relative;display:inline-flex;align-items:center}
 `
 	document.head.appendChild(s)
 }
@@ -549,51 +560,43 @@ function detectTheme() {
 	return lum < 128 ? 'dark' : 'light'
 }
 
-function findNativeShareButton() {
-	for (const btn of document.querySelectorAll('button')) {
-		if (btn.closest('.sc-wrap')) continue
-		if (btn.classList.contains('sc-native')) continue
-		const text = btn.textContent?.trim()
-		if (text === 'Share' || text === 'Share & Export') {
-			const rect = btn.getBoundingClientRect()
-			if (rect.top < 150 && rect.right > window.innerWidth / 2) return btn
-		}
-	}
-	return null
-}
-
-function injectShareMenu() {
+function injectButton() {
 	if (document.querySelector('.sc-wrap')) return
-	const nativeBtn = findNativeShareButton()
-	if (!nativeBtn) return
+
+	// Find the actions bar next to Claude's native Share button
+	const actionsBar = document.querySelector('[data-testid="wiggle-controls-actions"]')
+	if (!actionsBar) return
 
 	injectStyles()
+	const theme = detectTheme()
 
-	// Hide native button but keep it in DOM so we can trigger it
-	nativeBtn.classList.add('sc-native')
-	nativeBtn.style.display = 'none'
+	// Vertical separator
+	const divider = document.createElement('div')
+	divider.className = 'sc-divider'
 
-	// Clone native button to match its exact styling
-	const btn = nativeBtn.cloneNode(true)
-	btn.classList.remove('sc-native')
-	btn.classList.add('sc-trigger')
-	btn.style.display = ''
+	// Our button
+	const btn = document.createElement('button')
+	btn.type = 'button'
+	btn.className = 'sc-btn'
+	btn.title = 'ShareClaude'
+	const img = document.createElement('img')
+	img.src = getIconURL()
+	img.alt = ''
+	btn.appendChild(img)
+	btn.appendChild(document.createTextNode('ShareClaude'))
 
-	// Update button text from "Share" to "Share & Export"
-	const tw = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT)
-	let tn
-	while ((tn = tw.nextNode())) {
-		if (tn.textContent.trim() === 'Share') tn.textContent = 'Share & Export'
-	}
-	const savedBtnHTML = btn.innerHTML
+	// Wrapper for button + dropdown positioning
+	const wrap = document.createElement('div')
+	wrap.className = 'sc-wrap'
+	wrap.appendChild(btn)
 
-	// Build dropdown menu
+	// Dropdown menu
 	const menu = document.createElement('div')
 	menu.className = 'sc-menu'
-	menu.dataset.theme = detectTheme()
+	menu.dataset.theme = theme
+	wrap.appendChild(menu)
 
 	const icons = {
-		claude: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>',
 		share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>',
 		download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
 	}
@@ -605,7 +608,8 @@ function injectShareMenu() {
 		item.innerHTML = icon + '<span>' + label + '</span>'
 		item.addEventListener('click', async (e) => {
 			e.stopPropagation()
-			await handler(item)
+			menu.classList.remove('sc-open')
+			await handler()
 		})
 		menu.appendChild(item)
 	}
@@ -623,38 +627,26 @@ function injectShareMenu() {
 		menu.appendChild(l)
 	}
 
-	// 1. Share via Claude (triggers native button)
-	addItem(icons.claude, 'Share via Claude', () => {
-		menu.classList.remove('sc-open')
-		nativeBtn.style.display = ''
-		nativeBtn.click()
-		requestAnimationFrame(() => { nativeBtn.style.display = 'none' })
-	})
+	function setLoading(on) {
+		btn.classList.toggle('sc-loading', on)
+		btn.disabled = on
+	}
 
-	// 2. Share to ShareClaude
+	// Share to ShareClaude
 	addItem(icons.share, 'Share to ShareClaude', async () => {
-		menu.classList.remove('sc-open')
 		const conversationId = getConversationId()
 		if (!conversationId) { alert('Open a conversation first'); return }
 
-		btn.innerHTML = loaderSVG
-		btn.disabled = true
-
+		setLoading(true)
 		const messages = await getConversationMessages({ organizationId, conversationId })
-		if (!messages) {
-			alert('Failed to get conversation messages')
-			btn.innerHTML = savedBtnHTML; btn.disabled = false; return
-		}
+		if (!messages) { alert('Failed to get conversation messages'); setLoading(false); return }
 
 		const shareURL = await getShareURL(messages)
-		if (!shareURL) {
-			alert('Failed to generate share URL')
-			btn.innerHTML = savedBtnHTML; btn.disabled = false; return
-		}
+		if (!shareURL) { alert('Failed to generate share URL'); setLoading(false); return }
 
 		navigator.clipboard.writeText(shareURL)
 		window.open(shareURL, '_blank')
-		btn.innerHTML = savedBtnHTML; btn.disabled = false
+		setLoading(false)
 	})
 
 	addSep()
@@ -670,60 +662,48 @@ function injectShareMenu() {
 
 	formats.forEach(({ label, ext, convert, mime }) => {
 		addItem(icons.download, label, async () => {
-			menu.classList.remove('sc-open')
 			const conversationId = getConversationId()
 			if (!conversationId) { alert('Open a conversation first'); return }
 
-			btn.innerHTML = loaderSVG
-			btn.disabled = true
-
+			setLoading(true)
 			const messages = await getConversationMessages({ organizationId, conversationId })
-			if (!messages) {
-				alert('Failed to get conversation messages')
-				btn.innerHTML = savedBtnHTML; btn.disabled = false; return
-			}
+			if (!messages) { alert('Failed to get conversation messages'); setLoading(false); return }
 
 			const filename = sanitizeFilename(messages.title) + '.' + ext
 			const content = convert(messages.title || 'Conversation', messages.content)
 			downloadFile(content, filename, mime)
-			btn.innerHTML = savedBtnHTML; btn.disabled = false
+			setLoading(false)
 		})
 	})
 
-	// Assemble
-	const wrapper = document.createElement('div')
-	wrapper.className = 'sc-wrap'
-	nativeBtn.parentNode.insertBefore(wrapper, nativeBtn)
-	wrapper.appendChild(btn)
-	wrapper.appendChild(menu)
-
+	// Toggle menu
 	btn.addEventListener('click', (e) => {
-		e.preventDefault()
 		e.stopPropagation()
 		menu.dataset.theme = detectTheme()
 		menu.classList.toggle('sc-open')
 	})
 
+	// Close on outside click
 	document.addEventListener('click', (e) => {
-		if (!wrapper.contains(e.target)) menu.classList.remove('sc-open')
+		if (!wrap.contains(e.target)) menu.classList.remove('sc-open')
 	})
+
+	// Insert: [native Share] | [ShareClaude ▾]
+	actionsBar.appendChild(divider)
+	actionsBar.appendChild(wrap)
 }
 
 function monitorPageChanges() {
 	const observer = new MutationObserver(() => {
 		if (!document.querySelector('.sc-wrap')) {
-			injectShareMenu()
+			injectButton()
 		}
 	})
-
-	observer.observe(document.body, {
-		childList: true,
-		subtree: true
-	})
+	observer.observe(document.body, { childList: true, subtree: true })
 }
 
 window.addEventListener('load', async () => {
 	organizationId = await getOrganizationId()
-	injectShareMenu()
+	injectButton()
 	monitorPageChanges()
 })
