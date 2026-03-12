@@ -42,7 +42,7 @@ function Home() {
                                 className="inline-flex items-center px-6 py-3 text-lg font-semibold border-2 rounded-lg border-shareClaude-accent text-shareClaude-accent hover:bg-shareClaude-accent hover:text-white"
                             >
                                 <Link2 className="w-6 h-6 mr-2" />
-                                Get Share Link
+                                Get Example Link
                             </Link>
                         </div>
                         <p className="text-xs text-gray-400 opacity-75">
