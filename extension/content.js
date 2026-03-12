@@ -207,32 +207,17 @@ async function getShareURL(messages) {
 function convertToMarkdown(title, messages) {
 	let md = `# ${title}\n\n`
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'You' : 'Claude'
-		// Handle excerpt blocks: replace pattern with blockquote
-		const processed = message.replace(
-			/excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|$)/g,
-			(_, codeContent, plainContent) => {
-				const quoted = (codeContent ?? plainContent ?? '').trim()
-				return `> **Reply to:**\n> \n>${quoted.split('\n').join('\n> ')}\n`
-			}
-		)
-		md += `## ${role}\n\n${processed}\n\n---\n\n`
+		const role = source === 'user' ? 'Human' : 'Claude'
+		md += `## ${role}\n\n${message}\n\n---\n\n`
 	})
 	return md
-
+}
 
 function convertToText(title, messages) {
 	let txt = `${title}\n${'='.repeat(title.length)}\n\n`
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'You' : 'Claude'
-		// Strip markdown and handle excerpts
+		const role = source === 'user' ? 'Human' : 'Claude'
 		const plain = message
-			// Handle excerpt blocks first
-			.replace(/excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|$)/g, (_, codeContent, plainContent) => {
-				const quoted = (codeContent ?? plainContent ?? '').trim()
-				return `[Quote]\n${quoted}\n[/Quote]`
-			})
-			// Strip code blocks
 			.replace(/```[\s\S]*?```/g, (match) =>
 				match.replace(/```\w*\n?/g, '').trim()
 			)
@@ -244,18 +229,11 @@ function convertToText(title, messages) {
 		txt += `${role}:\n${plain}\n\n`
 	})
 	return txt
-
+}
 
 function convertToHTML(title, messages) {
 	const esc = (str) =>
 		str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-	function getAvatar(source) {
-		if (source === 'user') {
-			return '<div class="avatar avatar-user"><span>You</span></div>'
-		}
-		return '<div class="avatar avatar-claude"><span>C</span></div>'
-	}
 
 	function markdownToHTML(text) {
 		// 1. Save fenced code blocks
@@ -265,7 +243,7 @@ function convertToHTML(title, messages) {
 			return `\x00CODE${idx}\x00`
 		})
 
-		// 2. Handle excerpt blocks (reference saved code block placeholder or plain content)
+		// 2. Handle excerpt blocks (may reference a saved code block placeholder)
 		text = text.replace(
 			/excerpt_from_previous_claude_message\.txt:\n\n(?:\x00CODE(\d+)\x00|([\s\S]*?))(?=\n\n|$)/g,
 			(_, codeIdx, plainContent) => {
@@ -276,7 +254,7 @@ function convertToHTML(title, messages) {
 				} else {
 					quoted = esc((plainContent || '').trim())
 				}
-				return `<div class="excerpt"><div class="excerpt-label">Quoting</div><div class="excerpt-body">${quoted}</div></div>`
+				return `<div class="excerpt"><div class="excerpt-label">↩ Quoting</div><div class="excerpt-body">${quoted}</div></div>`
 			}
 		)
 
@@ -371,23 +349,19 @@ function convertToHTML(title, messages) {
 <title>${esc(title)}</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 32px 16px; background: #2C2B28; color: #e0e0e0; line-height: 1.6; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 720px; margin: 0 auto; padding: 32px 16px; background: #2C2B28; color: #e0e0e0; line-height: 1.6; }
 h1.title { font-size: 1.5rem; color: #f0f0f0; text-align: center; padding: 24px 0 16px; }
 h1.title::after { content: ''; display: block; width: 48px; height: 2px; background: #D97757; margin: 12px auto 0; border-radius: 1px; }
-.messages { display: flex; flex-direction: column; gap: 0; }
-.message { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(100,100,100,0.1); }
-.message:last-child { border-bottom: none; }
-.avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; color: white; }
-.avatar-user { background: #666666; }
-.avatar-claude { background: #D97757; }
-.message-body { flex: 1; min-width: 0; }
-.message-role { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.message-user .message-role { color: #999; }
-.message-claude .message-role { color: #D97757; }
+article { margin: 16px 0; padding: 16px 20px; border-radius: 12px; }
+article.human { background: #21201C; border: 1px solid rgba(100,100,100,0.3); }
+article.claude { background: #333330; border: 1px solid rgba(100,100,100,0.2); }
+.role { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+article.human .role { color: #999; }
+article.claude .role { color: #D97757; }
 .content p { margin: 6px 0; font-size: 15px; }
 .content p:first-child { margin-top: 0; }
 .content p:last-child { margin-bottom: 0; }
-.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 { color: #f0f0f0; margin: 12px 0 6px; font-weight: 600; }
+.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 { color: #f0f0f0; margin: 16px 0 6px; font-weight: 600; }
 .content h1 { font-size: 1.3rem; } .content h2 { font-size: 1.15rem; } .content h3 { font-size: 1rem; }
 .content ul, .content ol { padding-left: 20px; margin: 6px 0; }
 .content li { margin: 2px 0; font-size: 15px; }
@@ -404,22 +378,20 @@ table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; 
 th, td { padding: 8px 12px; border: 1px solid #444; text-align: left; }
 th { background: #21201C; font-weight: 600; color: #f0f0f0; }
 hr { border: none; border-top: 1px solid rgba(100,100,100,0.2); margin: 8px 0; }
-.excerpt { border-left: 2px solid #D97757; padding: 8px 10px; margin: 8px 0; background: rgba(217,119,87,0.1); border-radius: 0 4px 4px 0; }
+.excerpt { border-left: 2px solid #D97757; padding: 6px 10px; margin: 8px 0; background: rgba(0,0,0,0.15); border-radius: 0 4px 4px 0; }
 .excerpt-label { font-size: 11px; color: #D97757; font-weight: 600; margin-bottom: 4px; }
 .excerpt-body { font-size: 13px; color: #aaa; white-space: pre-wrap; }
 </style>
 </head>
 <body>
-<h1 class="title">${esc(title)}</h1>
-<div class="messages">\n`
+<h1 class="title">${esc(title)}</h1>\n`
 
 	messages.forEach(({ source, message }) => {
 		const role = source === 'user' ? 'You' : 'Claude'
-		const cls = source === 'user' ? 'user' : 'claude'
-		const avatar = getAvatar(source)
-		html += `<div class="message message-${cls}" data-role="${source}">\n${avatar}\n<div class="message-body"><div class="message-role">${role}</div>\n<div class="content">${markdownToHTML(message)}</div>\n</div>\n</div>\n`
+		const cls = source === 'user' ? 'human' : 'claude'
+		html += `<article class="${cls}" data-role="${source}">\n<div class="role">${role}</div>\n<div class="content">${markdownToHTML(message)}</div>\n</article>\n`
 	})
-	html += `</div>\n</body>\n</html>`
+	html += `</body>\n</html>`
 	return html
 }
 
@@ -434,11 +406,6 @@ function convertToRTF(title, messages) {
 
 	function stripMarkdown(str) {
 		return str
-			// Handle excerpts
-			.replace(/excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|$)/g, (_, codeContent, plainContent) => {
-				const quoted = (codeContent ?? plainContent ?? '').trim()
-				return `[Quote]\n${quoted}\n[/Quote]`
-			})
 			.replace(/```[\s\S]*?```/g, (match) =>
 				match.replace(/```\w*\n?/g, '').trim()
 			)
@@ -455,7 +422,7 @@ function convertToRTF(title, messages) {
 	rtf += '{\\b\\fs36 ' + escapeRTF(title) + '}\\par\\par\n'
 
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'You' : 'Claude'
+		const role = source === 'user' ? 'Human' : 'Claude'
 		const color = source === 'user' ? '\\cf2' : '\\cf1'
 		rtf += '{' + color + '\\b\\fs26 ' + role + '}\\cf0\\par\n'
 		const lines = stripMarkdown(message).split('\n')
@@ -593,11 +560,6 @@ function convertToDOCX(title, messages) {
 
 	function stripMarkdown(str) {
 		return str
-			// Handle excerpts
-			.replace(/excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|$)/g, (_, codeContent, plainContent) => {
-				const quoted = (codeContent ?? plainContent ?? '').trim()
-				return `[Quote]\n${quoted}\n[/Quote]`
-			})
 			.replace(/```[\s\S]*?```/g, (match) =>
 				match.replace(/```\w*\n?/g, '').trim()
 			)
@@ -614,7 +576,7 @@ function convertToDOCX(title, messages) {
 	paragraphs += `<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="48"/></w:rPr><w:t xml:space="preserve">${escapeXML(title)}</w:t></w:r></w:p>`
 
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'You' : 'Claude'
+		const role = source === 'user' ? 'Human' : 'Claude'
 		const color = source === 'user' ? '666666' : 'D97757'
 
 		// Role header
