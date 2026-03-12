@@ -29,7 +29,7 @@ Shared conversations are served from ShareClaude's database, not directly from C
 3. Click the **ShareClaude** button in the top-right corner (next to Claude's native Share button, separated by a divider)
 4. A menu appears with options:
    - **Share to ShareClaude:** Uploads the conversation and copies the link to your clipboard as an alternative to Claude's native share option
-   - **Export:** Downloads the conversation as HTML, Markdown, plain text, Word (.docx), or Rich Text Format (.rtf)
+   - **Export:** Downloads the conversation as HTML, Markdown, plain text, JSON, or Word (.docx)
 
 ## Tech Stack
 

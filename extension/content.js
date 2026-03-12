@@ -200,11 +200,42 @@ async function getShareURL(messages) {
 
 // --- export conversion functions ---
 
+const EXCERPT_BLOCK_RE = /excerpt_from_previous_claude_message\.txt:\s*\n\n(?:```[^\n]*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|\n?$)/g
+
+function normalizeMessageMarkdown(message) {
+	return message.replace(EXCERPT_BLOCK_RE, (_, fencedContent, plainContent) => {
+		const excerptContent = (fencedContent ?? plainContent ?? '').trim()
+		if (!excerptContent) return ''
+		const quotedLines = excerptContent
+			.split('\n')
+			.map((line) => `> ${line}`)
+			.join('\n')
+		return `> **Quoted excerpt**\n>\n${quotedLines}`
+	})
+}
+
+function markdownToPlainText(message) {
+	return normalizeMessageMarkdown(message)
+		.replace(/```[\w-]*\n([\s\S]*?)```/g, (_, code) => code.trim())
+		.replace(/^>\s?/gm, '')
+		.replace(/^#{1,6}\s+/gm, '')
+		.replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+		.replace(/\*\*(.+?)\*\*/g, '$1')
+		.replace(/\*(.+?)\*/g, '$1')
+		.replace(/~~(.+?)~~/g, '$1')
+		.replace(/`([^`]+)`/g, '$1')
+		.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)')
+		.replace(/^\|\s*:?-+:?\s*(\|\s*:?-+:?\s*)+$/gm, '')
+		.replace(/\|/g, ' | ')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim()
+}
+
 function convertToMarkdown(title, messages) {
 	let md = `# ${title}\n\n`
 	messages.forEach(({ source, message }) => {
 		const role = source === 'user' ? 'You' : 'Claude'
-		md += `## ${role}\n\n${message}\n\n---\n\n`
+		md += `## ${role}\n\n${normalizeMessageMarkdown(message)}\n\n---\n\n`
 	})
 	return md
 }
@@ -213,15 +244,7 @@ function convertToText(title, messages) {
 	let txt = `${title}\n${'='.repeat(title.length)}\n\n`
 	messages.forEach(({ source, message }) => {
 		const role = source === 'user' ? 'You' : 'Claude'
-		const plain = message
-			.replace(/```[\s\S]*?```/g, (match) =>
-				match.replace(/```\w*\n?/g, '').trim()
-			)
-			.replace(/`([^`]+)`/g, '$1')
-			.replace(/\*\*([^*]+)\*\*/g, '$1')
-			.replace(/\*([^*]+)\*/g, '$1')
-			.replace(/#{1,6}\s/g, '')
-			.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+		const plain = markdownToPlainText(message)
 		txt += `${role}:\n${plain}\n\n`
 	})
 	return txt
@@ -232,6 +255,8 @@ function convertToHTML(title, messages) {
 		str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 	function markdownToHTML(text) {
+		text = normalizeMessageMarkdown(text)
+
 		// 1. save fenced code blocks
 		const codeBlocks = []
 		text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
@@ -239,29 +264,14 @@ function convertToHTML(title, messages) {
 			return `\x00CODE${idx}\x00`
 		})
 
-		// 2. handle excerpt blocks (may reference a saved code block placeholder)
-		text = text.replace(
-			/excerpt_from_previous_claude_message\.txt:\n\n(?:\x00CODE(\d+)\x00|([\s\S]*?))(?=\n\n|$)/g,
-			(_, codeIdx, plainContent) => {
-				let quoted
-				if (codeIdx !== undefined) {
-					quoted = (codeBlocks[parseInt(codeIdx)] || {}).code || ''
-					codeBlocks[parseInt(codeIdx)] = null // consumed
-				} else {
-					quoted = esc((plainContent || '').trim())
-				}
-				return `<div class="excerpt"><div class="excerpt-label">↩ Quoting</div><div class="excerpt-body">${quoted}</div></div>`
-			}
-		)
-
-		// 3. save inline code
+		// 2. save inline code
 		const inlineCodes = []
 		text = text.replace(/`([^`\n]+)`/g, (_, code) => {
 			const idx = inlineCodes.push(esc(code)) - 1
 			return `\x00IC${idx}\x00`
 		})
 
-		// 4. tables
+		// 3. tables
 		text = text.replace(
 			/((?:[^\n]*\|[^\n]*\n)+)/g,
 			(block) => {
@@ -279,33 +289,33 @@ function convertToHTML(title, messages) {
 			}
 		)
 
-		// 5. headings
+		// 4. headings
 		text = text.replace(/^(#{1,6})\s+(.+)$/gm, (_, h, content) =>
 			`<h${h.length}>${applyInline(content)}</h${h.length}>`
 		)
 
-		// 6. blockquotes
+		// 5. blockquotes
 		text = text.replace(/^((?:>.*\n?)+)/gm, (match) => {
 			const inner = match.replace(/^>\s?/gm, '').trim()
 			return `<blockquote>${applyInline(inner)}</blockquote>`
 		})
 
-		// 7. unordered lists
+		// 6. unordered lists
 		text = text.replace(/^((?:[*\-]\s.+\n?)+)/gm, (block) => {
 			const items = block.trim().split('\n').map(l => l.replace(/^[*\-]\s/, ''))
 			return `<ul>${items.map(i => `<li>${applyInline(i)}</li>`).join('')}</ul>`
 		})
 
-		// 8. ordered lists
+		// 7. ordered lists
 		text = text.replace(/^((?:\d+\.\s.+\n?)+)/gm, (block) => {
 			const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, ''))
 			return `<ol>${items.map(i => `<li>${applyInline(i)}</li>`).join('')}</ol>`
 		})
 
-		// 9. horizontal rules
+		// 8. horizontal rules
 		text = text.replace(/^[-*_]{3,}$/gm, '<hr>')
 
-		// 10. paragraphs: wrap non-empty, non-block lines
+		// 9. paragraphs: wrap non-empty, non-block lines
 		text = text
 			.split(/\n{2,}/)
 			.map((para) => {
@@ -317,7 +327,7 @@ function convertToHTML(title, messages) {
 			})
 			.join('\n')
 
-		// 11. restore code blocks
+		// 10. restore code blocks
 		text = text.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
 			const b = codeBlocks[parseInt(idx)]
 			if (!b) return ''
@@ -391,45 +401,21 @@ hr { border: none; border-top: 1px solid rgba(100,100,100,0.2); margin: 8px 0; }
 	return html
 }
 
-function convertToRTF(title, messages) {
-	function escapeRTF(str) {
-		return str
-			.replace(/\\/g, '\\\\')
-			.replace(/\{/g, '\\{')
-			.replace(/\}/g, '\\}')
-			.replace(/[\u0080-\uffff]/g, (c) => '\\u' + c.charCodeAt(0) + '?')
-	}
+function convertToJSON(title, messages) {
+	const normalizedMessages = messages.map(({ source, message }) => ({
+		source,
+		message: normalizeMessageMarkdown(message)
+	}))
 
-	function stripMarkdown(str) {
-		return str
-			.replace(/```[\s\S]*?```/g, (match) =>
-				match.replace(/```\w*\n?/g, '').trim()
-			)
-			.replace(/`([^`]+)`/g, '$1')
-			.replace(/\*\*([^*]+)\*\*/g, '$1')
-			.replace(/\*([^*]+)\*/g, '$1')
-			.replace(/#{1,6}\s/g, '')
-			.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-	}
-
-	let rtf = '{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Calibri;}{\\f1 Consolas;}}\n'
-	rtf += '{\\colortbl;\\red217\\green119\\blue87;\\red100\\green100\\blue100;}\n'
-	rtf += '\\f0\\fs24\n'
-	rtf += '{\\b\\fs36 ' + escapeRTF(title) + '}\\par\\par\n'
-
-	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'You' : 'Claude'
-		const color = source === 'user' ? '\\cf2' : '\\cf1'
-		rtf += '{' + color + '\\b\\fs26 ' + role + '}\\cf0\\par\n'
-		const lines = stripMarkdown(message).split('\n')
-		lines.forEach((line) => {
-			rtf += escapeRTF(line) + '\\par\n'
-		})
-		rtf += '\\par\n'
-	})
-
-	rtf += '}'
-	return rtf
+	return JSON.stringify(
+		{
+			title,
+			exportedAt: new Date().toISOString(),
+			messages: normalizedMessages
+		},
+		null,
+		2
+	)
 }
 
 // --- minimal zip builder for docx generation ---
@@ -554,18 +540,6 @@ function convertToDOCX(title, messages) {
 			.replace(/"/g, '&quot;')
 	}
 
-	function stripMarkdown(str) {
-		return str
-			.replace(/```[\s\S]*?```/g, (match) =>
-				match.replace(/```\w*\n?/g, '').trim()
-			)
-			.replace(/`([^`]+)`/g, '$1')
-			.replace(/\*\*([^*]+)\*\*/g, '$1')
-			.replace(/\*([^*]+)\*/g, '$1')
-			.replace(/#{1,6}\s/g, '')
-			.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-	}
-
 	let paragraphs = ''
 
 	// title
@@ -579,7 +553,7 @@ function convertToDOCX(title, messages) {
 		paragraphs += `<w:p><w:r><w:rPr><w:b/><w:color w:val="${color}"/><w:sz w:val="28"/></w:rPr><w:t>${escapeXML(role)}</w:t></w:r></w:p>`
 
 		// message lines
-		const lines = stripMarkdown(message).split('\n')
+		const lines = markdownToPlainText(message).split('\n')
 		lines.forEach((line) => {
 			paragraphs += `<w:p><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${escapeXML(line)}</w:t></w:r></w:p>`
 		})
@@ -758,9 +732,9 @@ function injectButtons() {
 	const formats = [
 		{ label: 'Markdown (.md)', ext: 'md', convert: convertToMarkdown, mime: 'text/markdown' },
 		{ label: 'Plain Text (.txt)', ext: 'txt', convert: convertToText, mime: 'text/plain' },
+		{ label: 'JSON (.json)', ext: 'json', convert: convertToJSON, mime: 'application/json' },
 		{ label: 'HTML (.html)', ext: 'html', convert: convertToHTML, mime: 'text/html' },
-		{ label: 'Word (.docx)', ext: 'docx', convert: convertToDOCX, mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
-		{ label: 'Rich Text (.rtf)', ext: 'rtf', convert: convertToRTF, mime: 'application/rtf' }
+		{ label: 'Word (.docx)', ext: 'docx', convert: convertToDOCX, mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
 	]
 
 	formats.forEach(({ label, ext, convert, mime }) => {

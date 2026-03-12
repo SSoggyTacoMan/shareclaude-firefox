@@ -63,6 +63,40 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         return null;
     };
 
+    const markdownComponents = {
+        code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
+        pre: ({ children }) => (
+            <div className="overflow-hidden rounded-lg">{children}</div>
+        ),
+        a: ({ children, href }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+        ),
+        table: ({ children }) => (
+            <div className="my-4 overflow-x-auto border border-gray-700 rounded-lg">
+                <table className="min-w-full border-collapse">{children}</table>
+            </div>
+        ),
+        thead: ({ children }) => <thead className="bg-gray-800/70">{children}</thead>,
+        th: ({ children }) => (
+            <th className="px-3 py-2 font-semibold text-left text-gray-200 border-b border-r border-gray-700 last:border-r-0">{children}</th>
+        ),
+        td: ({ children }) => (
+            <td className="px-3 py-2 text-gray-300 align-top border-b border-r border-gray-700 last:border-r-0">{children}</td>
+        ),
+        tr: ({ children }) => <tr className="odd:bg-gray-900/40 even:bg-gray-900/10">{children}</tr>
+    };
+
+    const renderMarkdown = (content, index, extraClassName = '') => (
+        <ReactMarkdown
+            key={index}
+            remarkPlugins={[remarkGfm]}
+            className={`prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500 ${extraClassName}`}
+            components={markdownComponents}
+        >
+            {content}
+        </ReactMarkdown>
+    );
+
     const renderArtifact = (artifact, index) => {
         switch (artifact.type) {
             case 'application/vnd.ant.mermaid':
@@ -104,6 +138,8 @@ const MarkdownRenderer = ({ content, isHuman }) => {
                 );
 
             case 'text/markdown':
+            case 'text/plain':
+            case 'text/x-markdown':
                 return (
                     <div key={index} className="my-4">
                         <div className="px-4 py-2 text-xs text-gray-200 bg-gray-800">
@@ -150,38 +186,10 @@ const MarkdownRenderer = ({ content, isHuman }) => {
                 </svg>
                 Quoting
             </div>
-            <div className="text-sm text-gray-400 whitespace-pre-wrap">{quotedText}</div>
+            <div className="text-sm text-gray-400">
+                {renderMarkdown(quotedText, `${key}-excerpt`, 'prose-p:text-gray-400 prose-headings:text-gray-300 prose-strong:text-gray-300')}
+            </div>
         </div>
-    );
-
-    const renderMarkdown = (content, index) => (
-        <ReactMarkdown
-            key={index}
-            remarkPlugins={[remarkGfm]}
-            className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-blockquote:border-gray-700 prose-blockquote:text-gray-300 prose-hr:border-gray-700 prose-headings:text-gray-200 prose-li:my-0.5 prose-li:marker:text-gray-500"
-            components={{
-                code: (props) => <CodeBlock {...props} isHuman={isHuman} />,
-                pre: ({ children }) => (
-                    <div className="overflow-hidden rounded-lg">{children}</div>
-                ),
-                a: ({ children, href }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                ),
-                table: ({ children }) => (
-                    <div className="my-4 overflow-x-auto">
-                        <table className="min-w-full border border-collapse border-gray-700">{children}</table>
-                    </div>
-                ),
-                th: ({ children }) => (
-                    <th className="px-3 py-2 font-semibold text-left text-gray-200 bg-gray-800 border border-gray-700">{children}</th>
-                ),
-                td: ({ children }) => (
-                    <td className="px-3 py-2 text-gray-300 border border-gray-700">{children}</td>
-                ),
-            }}
-        >
-            {content}
-        </ReactMarkdown>
     );
 
     const renderPart = (text, index) => {
