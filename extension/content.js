@@ -207,7 +207,7 @@ async function getShareURL(messages) {
 function convertToMarkdown(title, messages) {
 	let md = `# ${title}\n\n`
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'Human' : 'Claude'
+		const role = source === 'user' ? 'You' : 'Claude'
 		md += `## ${role}\n\n${message}\n\n---\n\n`
 	})
 	return md
@@ -216,7 +216,7 @@ function convertToMarkdown(title, messages) {
 function convertToText(title, messages) {
 	let txt = `${title}\n${'='.repeat(title.length)}\n\n`
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'Human' : 'Claude'
+		const role = source === 'user' ? 'You' : 'Claude'
 		const plain = message
 			.replace(/```[\s\S]*?```/g, (match) =>
 				match.replace(/```\w*\n?/g, '').trim()
@@ -422,7 +422,7 @@ function convertToRTF(title, messages) {
 	rtf += '{\\b\\fs36 ' + escapeRTF(title) + '}\\par\\par\n'
 
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'Human' : 'Claude'
+		const role = source === 'user' ? 'You' : 'Claude'
 		const color = source === 'user' ? '\\cf2' : '\\cf1'
 		rtf += '{' + color + '\\b\\fs26 ' + role + '}\\cf0\\par\n'
 		const lines = stripMarkdown(message).split('\n')
@@ -576,7 +576,7 @@ function convertToDOCX(title, messages) {
 	paragraphs += `<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="48"/></w:rPr><w:t xml:space="preserve">${escapeXML(title)}</w:t></w:r></w:p>`
 
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'Human' : 'Claude'
+		const role = source === 'user' ? 'You' : 'Claude'
 		const color = source === 'user' ? '666666' : 'D97757'
 
 		// Role header
