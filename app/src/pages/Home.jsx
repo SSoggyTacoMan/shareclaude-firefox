@@ -15,7 +15,7 @@ function Home() {
                         <br />
                         <span className="text-shareClaude-accent">With One Click</span>
                     </h1>
-                    <p className="max-w-2xl mx-auto mb-12 text-xl text-gray-400">
+                    <p className="max-w-2xl mx-auto mb-4 text-xl text-gray-400">
                         Instantly share your Claude.AI conversations with anyone. A simple browser extension
                         that makes collaboration effortless.
                     </p>
@@ -52,7 +52,7 @@ function Home() {
                 </div>
 
                 {/* YouTube Video */}
-                <div className="max-w-4xl px-4 mx-auto my-8 sm:my-12 sm:px-8">
+                <div className="max-w-4xl px-4 mx-auto my-2 sm:px-8">
                     <div className="overflow-hidden transition-all duration-300 border border-gray-600 shadow-lg aspect-video rounded-xl shadow-shareClaude-accent/50 hover:shadow-shareClaude-accent/80">
                         <LiteYouTubeEmbed
                             id="fhiBt878T34"
@@ -63,26 +63,26 @@ function Home() {
                 </div>
 
                 {/* Feature Card */}
-                <div className="py-8 sm:py-16">
+                <div className="py-4">
                     <div className="max-w-4xl px-4 mx-auto sm:px-8">
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                             <div className="p-6 text-center rounded-lg bg-shareClaude-backgroundLight">
-                                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-lg bg-shareClaude-background">
-                                    <Link2 className="w-6 h-6 text-shareClaude-accent" />
+                                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-lg bg-shareClaude-background">
+                                    <Link2 className="w-8 h-8 text-shareClaude-accent" />
                                 </div>
                                 <h3 className="mb-2 text-xl font-semibold">One-Click Sharing</h3>
                                 <p className="text-gray-400">Share your entire Claude conversation with a single click, maintaining all formatting and context.</p>
                             </div>
                             <div className="p-6 text-center rounded-lg bg-shareClaude-backgroundLight">
-                                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-lg bg-shareClaude-background">
-                                    <Chrome className="w-6 h-6 text-shareClaude-accent" />
+                                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-lg bg-shareClaude-background">
+                                    <Chrome className="w-8 h-8 text-shareClaude-accent" />
                                 </div>
                                 <h3 className="mb-2 text-xl font-semibold">Seamless Integration</h3>
                                 <p className="text-gray-400">Integrates perfectly with Claude.AI&apos;s interface, providing a native sharing experience.</p>
                             </div>
                             <div className="p-6 text-center rounded-lg bg-shareClaude-backgroundLight">
-                                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-lg bg-shareClaude-background">
-                                    <Github className="w-6 h-6 text-shareClaude-accent" />
+                                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-lg bg-shareClaude-background">
+                                    <Github className="w-8 h-8 text-shareClaude-accent" />
                                 </div>
                                 <h3 className="mb-2 text-xl font-semibold">Open Source</h3>
                                 <p className="text-gray-400">Fully open-source and free. Contribute to improve sharing. Available on Chrome, Firefox, and all major browsers.</p>
