@@ -8,7 +8,6 @@ Browser extension to share and export your [Claude](https://claude.ai) chats wit
 
 ## [Download from Chrome Web Store](https://chromewebstore.google.com/detail/shareclaude/pcpjdbnjhgofgjgegodlnebdnmiddmaa) OR [Download from Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/shareclaude/)
 
-
 ## Features
 
 - One-click sharing of Claude AI conversations
