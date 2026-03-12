@@ -516,24 +516,20 @@ function downloadFile(content, filename, mimeType) {
 
 // --- UI injection ---
 
-function getIconURL() {
-	return typeof browser !== 'undefined'
-		? browser.runtime.getURL('images/icon-128.png')
-		: chrome.runtime.getURL('images/icon-128.png')
-}
-
 function injectStyles() {
 	if (document.getElementById('sc-styles')) return
 	const s = document.createElement('style')
 	s.id = 'sc-styles'
 	s.textContent = `
-.sc-divider{width:1px;height:20px;margin:0 2px;background:var(--border-300, rgba(128,128,128,0.25));flex-shrink:0}
-.sc-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 10px;border:0.5px solid var(--border-300, rgba(128,128,128,0.25));border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;position:relative;transition:background 0.1s}
-.sc-btn:hover{background:var(--bg-200, rgba(128,128,128,0.08))}
-.sc-btn:active{transform:scale(0.985)}
-.sc-btn img{width:16px;height:16px;border-radius:2px}
-.sc-btn.sc-loading{opacity:0.5;pointer-events:none}
-.sc-menu{position:absolute;top:calc(100% + 6px);right:0;border-radius:12px;padding:4px;z-index:50001;min-width:220px;display:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.sc-divider{width:1px;height:20px;margin:0 4px;background:var(--border-300, rgba(128,128,128,0.25));flex-shrink:0}
+.sc-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;border-radius:6px;background:transparent;color:inherit;cursor:pointer;transition:background 0.1s}
+.sc-icon-btn:hover{background:var(--bg-200, rgba(128,128,128,0.1))}
+.sc-icon-btn:active{transform:scale(0.95)}
+.sc-icon-btn svg{width:16px;height:16px;opacity:0.65}
+.sc-icon-btn:hover svg{opacity:1}
+.sc-icon-btn.sc-loading{opacity:0.4;pointer-events:none}
+.sc-export-wrap{position:relative;display:inline-flex;align-items:center}
+.sc-menu{position:absolute;top:calc(100% + 6px);right:0;border-radius:12px;padding:4px;z-index:50001;min-width:200px;display:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .sc-menu.sc-open{display:block}
 .sc-menu[data-theme="light"]{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.12);color:#333}
 .sc-menu[data-theme="dark"]{background:rgba(40,40,40,0.95);border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 30px rgba(0,0,0,0.4);color:#e0e0e0}
@@ -541,13 +537,6 @@ function injectStyles() {
 .sc-menu[data-theme="light"] .sc-item:hover{background:rgba(0,0,0,0.06)}
 .sc-menu[data-theme="dark"] .sc-item:hover{background:rgba(255,255,255,0.08)}
 .sc-item svg{width:16px;height:16px;flex-shrink:0;opacity:0.55}
-.sc-sep{height:1px;margin:4px 8px}
-.sc-menu[data-theme="light"] .sc-sep{background:rgba(0,0,0,0.08)}
-.sc-menu[data-theme="dark"] .sc-sep{background:rgba(255,255,255,0.1)}
-.sc-lbl{padding:6px 12px 2px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
-.sc-menu[data-theme="light"] .sc-lbl{color:#999}
-.sc-menu[data-theme="dark"] .sc-lbl{color:#777}
-.sc-wrap{position:relative;display:inline-flex;align-items:center}
 `
 	document.head.appendChild(s)
 }
@@ -560,97 +549,59 @@ function detectTheme() {
 	return lum < 128 ? 'dark' : 'light'
 }
 
-function injectButton() {
-	if (document.querySelector('.sc-wrap')) return
+function injectButtons() {
+	if (document.querySelector('.sc-divider')) return
 
-	// Find the actions bar next to Claude's native Share button
 	const actionsBar = document.querySelector('[data-testid="wiggle-controls-actions"]')
 	if (!actionsBar) return
 
 	injectStyles()
-	const theme = detectTheme()
 
-	// Vertical separator
+	const shareSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>'
+	const downloadSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
+
+	// --- Divider ---
 	const divider = document.createElement('div')
 	divider.className = 'sc-divider'
 
-	// Our button
-	const btn = document.createElement('button')
-	btn.type = 'button'
-	btn.className = 'sc-btn'
-	btn.title = 'ShareClaude'
-	const img = document.createElement('img')
-	img.src = getIconURL()
-	img.alt = ''
-	btn.appendChild(img)
-	btn.appendChild(document.createTextNode('ShareClaude'))
+	// --- Share button (direct action, no dropdown) ---
+	const shareBtn = document.createElement('button')
+	shareBtn.type = 'button'
+	shareBtn.className = 'sc-icon-btn'
+	shareBtn.title = 'Share to ShareClaude'
+	shareBtn.innerHTML = shareSVG
 
-	// Wrapper for button + dropdown positioning
-	const wrap = document.createElement('div')
-	wrap.className = 'sc-wrap'
-	wrap.appendChild(btn)
-
-	// Dropdown menu
-	const menu = document.createElement('div')
-	menu.className = 'sc-menu'
-	menu.dataset.theme = theme
-	wrap.appendChild(menu)
-
-	const icons = {
-		share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>',
-		download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
-	}
-
-	function addItem(icon, label, handler) {
-		const item = document.createElement('button')
-		item.type = 'button'
-		item.className = 'sc-item'
-		item.innerHTML = icon + '<span>' + label + '</span>'
-		item.addEventListener('click', async (e) => {
-			e.stopPropagation()
-			menu.classList.remove('sc-open')
-			await handler()
-		})
-		menu.appendChild(item)
-	}
-
-	function addSep() {
-		const d = document.createElement('div')
-		d.className = 'sc-sep'
-		menu.appendChild(d)
-	}
-
-	function addLabel(text) {
-		const l = document.createElement('div')
-		l.className = 'sc-lbl'
-		l.textContent = text
-		menu.appendChild(l)
-	}
-
-	function setLoading(on) {
-		btn.classList.toggle('sc-loading', on)
-		btn.disabled = on
-	}
-
-	// Share to ShareClaude
-	addItem(icons.share, 'Share to ShareClaude', async () => {
+	shareBtn.addEventListener('click', async () => {
 		const conversationId = getConversationId()
 		if (!conversationId) { alert('Open a conversation first'); return }
 
-		setLoading(true)
+		shareBtn.classList.add('sc-loading')
 		const messages = await getConversationMessages({ organizationId, conversationId })
-		if (!messages) { alert('Failed to get conversation messages'); setLoading(false); return }
+		if (!messages) { alert('Failed to get conversation messages'); shareBtn.classList.remove('sc-loading'); return }
 
 		const shareURL = await getShareURL(messages)
-		if (!shareURL) { alert('Failed to generate share URL'); setLoading(false); return }
+		if (!shareURL) { alert('Failed to generate share URL'); shareBtn.classList.remove('sc-loading'); return }
 
 		navigator.clipboard.writeText(shareURL)
 		window.open(shareURL, '_blank')
-		setLoading(false)
+		shareBtn.classList.remove('sc-loading')
 	})
 
-	addSep()
-	addLabel('Export')
+	// --- Download button (opens format picker dropdown) ---
+	const exportWrap = document.createElement('div')
+	exportWrap.className = 'sc-export-wrap'
+
+	const dlBtn = document.createElement('button')
+	dlBtn.type = 'button'
+	dlBtn.className = 'sc-icon-btn'
+	dlBtn.title = 'Export conversation'
+	dlBtn.innerHTML = downloadSVG
+	exportWrap.appendChild(dlBtn)
+
+	const menu = document.createElement('div')
+	menu.className = 'sc-menu'
+	menu.dataset.theme = detectTheme()
+	exportWrap.appendChild(menu)
 
 	const formats = [
 		{ label: 'Markdown (.md)', ext: 'md', convert: convertToMarkdown, mime: 'text/markdown' },
@@ -661,42 +612,49 @@ function injectButton() {
 	]
 
 	formats.forEach(({ label, ext, convert, mime }) => {
-		addItem(icons.download, label, async () => {
+		const item = document.createElement('button')
+		item.type = 'button'
+		item.className = 'sc-item'
+		item.innerHTML = downloadSVG + '<span>' + label + '</span>'
+		item.addEventListener('click', async (e) => {
+			e.stopPropagation()
+			menu.classList.remove('sc-open')
+
 			const conversationId = getConversationId()
 			if (!conversationId) { alert('Open a conversation first'); return }
 
-			setLoading(true)
+			dlBtn.classList.add('sc-loading')
 			const messages = await getConversationMessages({ organizationId, conversationId })
-			if (!messages) { alert('Failed to get conversation messages'); setLoading(false); return }
+			if (!messages) { alert('Failed to get conversation messages'); dlBtn.classList.remove('sc-loading'); return }
 
 			const filename = sanitizeFilename(messages.title) + '.' + ext
 			const content = convert(messages.title || 'Conversation', messages.content)
 			downloadFile(content, filename, mime)
-			setLoading(false)
+			dlBtn.classList.remove('sc-loading')
 		})
+		menu.appendChild(item)
 	})
 
-	// Toggle menu
-	btn.addEventListener('click', (e) => {
+	dlBtn.addEventListener('click', (e) => {
 		e.stopPropagation()
 		menu.dataset.theme = detectTheme()
 		menu.classList.toggle('sc-open')
 	})
 
-	// Close on outside click
 	document.addEventListener('click', (e) => {
-		if (!wrap.contains(e.target)) menu.classList.remove('sc-open')
+		if (!exportWrap.contains(e.target)) menu.classList.remove('sc-open')
 	})
 
-	// Insert: [native Share] | [ShareClaude ▾]
+	// Append: [native buttons] | [share] [download▾]
 	actionsBar.appendChild(divider)
-	actionsBar.appendChild(wrap)
+	actionsBar.appendChild(shareBtn)
+	actionsBar.appendChild(exportWrap)
 }
 
 function monitorPageChanges() {
 	const observer = new MutationObserver(() => {
-		if (!document.querySelector('.sc-wrap')) {
-			injectButton()
+		if (!document.querySelector('.sc-divider')) {
+			injectButtons()
 		}
 	})
 	observer.observe(document.body, { childList: true, subtree: true })
@@ -704,6 +662,6 @@ function monitorPageChanges() {
 
 window.addEventListener('load', async () => {
 	organizationId = await getOrganizationId()
-	injectButton()
+	injectButtons()
 	monitorPageChanges()
 })

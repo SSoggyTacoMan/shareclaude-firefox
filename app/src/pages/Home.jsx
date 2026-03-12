@@ -8,7 +8,7 @@ function Home() {
     return (
         <div className="min-h-screen overflow-x-hidden text-gray-200">
             <main>
-                {/* Hero Section */}
+                {/* ero Section */}
                 <div className="max-w-4xl px-4 py-12 mx-auto text-center sm:px-8 sm:py-24">
                     <h1 className="mb-6 text-4xl font-bold sm:text-6xl">
                         Share Your Claude Chats

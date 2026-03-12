@@ -26,12 +26,6 @@
             ]
         }
     ],
-    "web_accessible_resources": [
-        {
-            "resources": ["images/icon-128.png"],
-            "matches": ["https://claude.ai/*"]
-        }
-    ],
     "browser_specific_settings": {
         "gecko": {
             "id": "shareclaude@shareclaude.pages.dev",
