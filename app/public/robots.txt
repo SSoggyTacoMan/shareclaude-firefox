@@ -1,4 +1,4 @@
 User-agent: *
-Disallow: /c/
-
 Allow: /
+
+Sitemap: https://shareclaude.pages.dev/sitemap.xml

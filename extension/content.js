@@ -245,28 +245,35 @@ function convertToHTML(title, messages) {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(title)}</title>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #1a1a1a; color: #e0e0e0; }
-h1 { border-bottom: 2px solid #d97757; padding-bottom: 12px; color: #fff; }
-.message { margin: 20px 0; padding: 16px; border-radius: 8px; }
-.human { background: #2a2a2a; border-left: 3px solid #666; }
-.claude { background: #252525; border-left: 3px solid #d97757; }
-.role { font-weight: 700; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-.human .role { color: #999; }
-.claude .role { color: #d97757; }
-.content { white-space: pre-wrap; line-height: 1.6; }
-pre { background: #111; padding: 12px; border-radius: 6px; overflow-x: auto; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 720px; margin: 0 auto; padding: 32px 16px; background: #2C2B28; color: #e0e0e0; line-height: 1.6; }
+h1 { font-size: 1.5rem; color: #f0f0f0; text-align: center; padding: 24px 0 16px; }
+h1::after { content: ''; display: block; width: 48px; height: 2px; background: #D97757; margin: 12px auto 0; border-radius: 1px; }
+article { margin: 16px 0; padding: 16px 20px; border-radius: 12px; }
+article.human { background: #21201C; border: 1px solid rgba(100,100,100,0.3); }
+article.claude { background: #333330; border: 1px solid rgba(100,100,100,0.2); }
+.role { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+article.human .role { color: #999; }
+article.claude .role { color: #D97757; }
+.content { white-space: pre-wrap; line-height: 1.7; font-size: 15px; }
+pre { background: #1a1a18; padding: 12px 16px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
 code { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+th, td { padding: 8px 12px; border: 1px solid #444; text-align: left; }
+th { background: #21201C; font-weight: 600; }
+hr { border: none; border-top: 1px solid rgba(100,100,100,0.2); margin: 4px 0; }
 </style>
 </head>
 <body>
 <h1>${esc(title)}</h1>\n`
 
 	messages.forEach(({ source, message }) => {
-		const role = source === 'user' ? 'Human' : 'Claude'
+		const role = source === 'user' ? 'You' : 'Claude'
 		const cls = source === 'user' ? 'human' : 'claude'
-		html += `<div class="message ${cls}">\n<div class="role">${role}</div>\n<div class="content">${esc(message)}</div>\n</div>\n`
+		html += `<article class="${cls}" data-role="${source}">\n<div class="role">${role}</div>\n<div class="content">${esc(message)}</div>\n</article>\n`
 	})
 	html += `</body>\n</html>`
 	return html

@@ -32,30 +32,29 @@ function ChatViewer() {
         </div>
     );
 
-
     return (
         <div className="min-h-screen flex flex-col">
-            <main className="flex-grow w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
-                    <div className="p-6 border-b border-gray-700">
-                        <h2 className="text-xl font-semibold text-gray-200 text-center">
-                            {chatData?.title}
-                        </h2>
-                    </div>
-                    <div className="p-6">
-                        <div className="space-y-6">
-                            {chatData ? (
-                                chatData.content.map((chat, index) => (
-                                    <ChatMessage key={index} chat={chat} />
-                                ))
-                            ) : (
-                                <div className="flex justify-center py-8">
-                                    <div className="w-10 h-10 border-4 border-shareClaude-accent border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                            )}
+            <main className="flex-grow w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {chatData && (
+                    <header className="mb-6 text-center">
+                        <h1 className="text-2xl font-bold text-gray-100">
+                            {chatData.title}
+                        </h1>
+                        <div className="mt-2 h-0.5 w-12 mx-auto rounded-full bg-shareClaude-accent/60" />
+                    </header>
+                )}
+
+                <section className="divide-y divide-gray-700/30">
+                    {chatData ? (
+                        chatData.content.map((chat, index) => (
+                            <ChatMessage key={index} chat={chat} />
+                        ))
+                    ) : (
+                        <div className="flex justify-center py-16">
+                            <div className="w-10 h-10 border-4 border-shareClaude-accent border-t-transparent rounded-full animate-spin" />
                         </div>
-                    </div>
-                </div>
+                    )}
+                </section>
             </main>
         </div>
     );
