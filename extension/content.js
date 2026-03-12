@@ -4,6 +4,8 @@ let organizationId = ''
 
 const artifactsCache = new Map()
 
+let debugCandidatesLogged = false
+
 async function getOrganizationId() {
 	if (organizationId) return organizationId
 	try {
@@ -691,10 +693,15 @@ function ensureControlsPosition(actionsBar, controlsWrap) {
 function injectButtons() {
 	const actionsBar = findActionsBar()
 	if (!actionsBar) {
-		const ids = [...document.querySelectorAll('[data-testid]')]
-			.map((el) => el.dataset.testid)
-			.filter((id) => id && (id.includes('wiggle') || id.includes('action') || id.includes('control') || id.includes('message')))
-		if (ids.length) console.debug('[ShareClaude] candidate testids:', [...new Set(ids)])
+		if (!debugCandidatesLogged) {
+			const ids = [...document.querySelectorAll('[data-testid]')]
+				.map((el) => el.dataset.testid)
+				.filter((id) => id && (id.includes('wiggle') || id.includes('action') || id.includes('control') || id.includes('message')))
+			if (ids.length) {
+				console.debug('[ShareClaude] candidate testids:', [...new Set(ids)])
+				debugCandidatesLogged = true
+			}
+		}
 		return
 	}
 
@@ -804,8 +811,10 @@ function injectButtons() {
 }
 
 function monitorPageChanges() {
+	let debounceTimer = null
 	const observer = new MutationObserver(() => {
-		injectButtons()
+		clearTimeout(debounceTimer)
+		debounceTimer = setTimeout(injectButtons, 300)
 	})
 	observer.observe(document.body, { childList: true, subtree: true })
 }

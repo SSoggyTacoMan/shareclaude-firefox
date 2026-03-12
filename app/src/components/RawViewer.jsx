@@ -19,7 +19,8 @@ function RawViewer() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch(`/api/chats/${chatId}`);
+                const apiBase = (import.meta && import.meta.env && import.meta.env.VITE_API_ORIGIN) || '';
+                const res = await fetch(`${apiBase}/api/chats/${chatId}`);
                 if (!res.ok) {
                     let msg = `HTTP ${res.status}`;
                     try {
