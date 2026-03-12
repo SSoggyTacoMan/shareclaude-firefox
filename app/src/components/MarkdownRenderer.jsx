@@ -4,8 +4,8 @@ import CodeBlock from './CodeBlock';
 import mermaid from 'mermaid';
 import { useEffect, useRef } from 'react';
 
-// Splits a markdown string on excerpt_from_previous_claude_message.txt blocks
-// Returns array of { type: 'markdown'|'excerpt', content: string }
+// splits a markdown string on excerpt_from_previous_claude_message.txt blocks
+// returns array of { type: 'markdown'|'excerpt', content: string }
 const EXCERPT_RE = /excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|\n?$)/g;
 
 function splitOnExcerpts(text) {
@@ -28,7 +28,6 @@ function splitOnExcerpts(text) {
     return parts.length > 0 ? parts : [{ type: 'markdown', content: text }];
 }
 
-// Initialize mermaid with dark theme config
 mermaid.initialize({
     startOnLoad: true,
     theme: 'dark'
@@ -38,7 +37,6 @@ const MarkdownRenderer = ({ content, isHuman }) => {
     const mermaidRef = useRef(null);
 
     useEffect(() => {
-        // Re-render all mermaid diagrams when content changes
         if (mermaidRef.current) {
             mermaid.init(undefined, '.mermaid');
         }
@@ -50,7 +48,6 @@ const MarkdownRenderer = ({ content, isHuman }) => {
         const titleMatch = text.match(/title="([^"]*)"/);
         const languageMatch = text.match(/language="([^"]*)"/);
 
-        // Extract content between opening and closing tags
         const contentMatch = text.match(/<antArtifact[^>]*>([\s\S]*?)<\/antArtifact>/);
 
         if (identifierMatch && typeMatch && titleMatch && contentMatch) {
