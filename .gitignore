@@ -27,4 +27,3 @@ dist-ssr
 assets
 *.env
 *.zip
-/.claude-example.html
