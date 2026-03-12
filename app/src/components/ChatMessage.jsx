@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import PropTypes from 'prop-types';
 import MarkdownRenderer from './MarkdownRenderer';
 
 function ChatMessage({ chat }) {
@@ -24,5 +25,12 @@ function ChatMessage({ chat }) {
         </article>
     );
 }
+
+ChatMessage.propTypes = {
+    chat: PropTypes.shape({
+        source: PropTypes.string,
+        message: PropTypes.string,
+    }).isRequired,
+};
 
 export default memo(ChatMessage);
