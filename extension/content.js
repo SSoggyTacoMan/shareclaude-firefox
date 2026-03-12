@@ -669,12 +669,32 @@ function detectTheme() {
 	return lum < 128 ? 'dark' : 'light'
 }
 
+function findActionsBar() {
+	// Try known selectors in order of preference
+	return (
+		document.querySelector('[data-testid="wiggle-controls-actions"]') ||
+		document.querySelector('[data-testid$="-controls-actions"]') ||
+		document.querySelector('[data-testid*="controls-actions"]') ||
+		document.querySelector('[data-testid*="message-actions"]') ||
+		document.querySelector('[data-testid*="action-bar"]') ||
+		null
+	)
+}
+
 function injectButtons() {
 	if (document.querySelector('.sc-divider')) return
 
-	const actionsBar = document.querySelector('[data-testid="wiggle-controls-actions"]')
-	if (!actionsBar) return
+	const actionsBar = findActionsBar()
+	if (!actionsBar) {
+		// Dump available testids near Claude message areas to help diagnose selector changes
+		const ids = [...document.querySelectorAll('[data-testid]')]
+			.map((el) => el.dataset.testid)
+			.filter((id) => id && (id.includes('wiggle') || id.includes('action') || id.includes('control') || id.includes('message')))
+		if (ids.length) console.debug('[ShareClaude] candidate testids:', [...new Set(ids)])
+		return
+	}
 
+	console.debug('[ShareClaude] injecting into:', actionsBar.dataset.testid)
 	injectStyles()
 
 	const shareSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>'
