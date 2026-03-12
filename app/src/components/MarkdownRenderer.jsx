@@ -7,25 +7,48 @@ import { useEffect, useRef } from 'react';
 
 // splits a markdown string on excerpt_from_previous_claude_message.txt blocks
 // returns array of { type: 'markdown'|'excerpt', content: string }
-const EXCERPT_RE = /excerpt_from_previous_claude_message\.txt:\n\n(?:```\w*\n([\s\S]*?)\n```|([\s\S]*?))(?=\n\n|\n?$)/g;
+const EXCERPT_HEADER_RE = /excerpt_from_previous_claude_message\.txt:\s*(?:\r?\n){2}/g;
+const EXCERPT_MARKER = 'excerpt_from_previous_claude_message.txt:';
+const FENCED_EXCERPT_RE = /^```[^\n\r]*\r?\n([\s\S]*?)\r?\n```/;
 
 function splitOnExcerpts(text) {
     const parts = [];
-    let lastIndex = 0;
-    const re = new RegExp(EXCERPT_RE.source, 'g');
-    let match;
-    while ((match = re.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-            parts.push({ type: 'markdown', content: text.slice(lastIndex, match.index) });
+    let cursor = 0;
+    const headerRe = new RegExp(EXCERPT_HEADER_RE.source, 'g');
+    let headerMatch;
+
+    while ((headerMatch = headerRe.exec(text)) !== null) {
+        const excerptStart = headerMatch.index;
+        const bodyStart = headerRe.lastIndex;
+
+        if (excerptStart > cursor) {
+            parts.push({ type: 'markdown', content: text.slice(cursor, excerptStart) });
         }
-        // group 1 = fenced code content, group 2 = plain content
-        const quotedText = (match[1] ?? match[2] ?? '').trim();
+
+        const remaining = text.slice(bodyStart);
+        const fencedMatch = remaining.match(FENCED_EXCERPT_RE);
+
+        let quotedText = '';
+        let blockEnd = bodyStart;
+
+        if (fencedMatch) {
+            quotedText = (fencedMatch[1] || '').trim();
+            blockEnd = bodyStart + fencedMatch[0].length;
+        } else {
+            const nextMarkerIndex = text.indexOf(EXCERPT_MARKER, bodyStart);
+            blockEnd = nextMarkerIndex === -1 ? text.length : nextMarkerIndex;
+            quotedText = text.slice(bodyStart, blockEnd).trim();
+        }
+
         parts.push({ type: 'excerpt', content: quotedText });
-        lastIndex = match.index + match[0].length;
+        cursor = blockEnd;
+        headerRe.lastIndex = blockEnd;
     }
-    if (lastIndex < text.length) {
-        parts.push({ type: 'markdown', content: text.slice(lastIndex) });
+
+    if (cursor < text.length) {
+        parts.push({ type: 'markdown', content: text.slice(cursor) });
     }
+
     return parts.length > 0 ? parts : [{ type: 'markdown', content: text }];
 }
 
