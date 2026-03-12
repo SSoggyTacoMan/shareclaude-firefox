@@ -31,8 +31,8 @@ Further conversations are served from ShareClaude’s database, not directly fro
 2. Start or continue a conversation with Claude
 3. Click the **ShareClaude** button in the top-right corner (next to Claude's native Share button, separated by a divider)
 4. A menu appears with options:
-   - **Share to ShareClaude** — uploads the conversation and copies the link to your clipboard
-   - **Export** — download the conversation as Markdown, Plain Text, HTML, Word (.docx), or Rich Text (.rtf)
+   - **Share to ShareClaude:** uploads the conversation and copies the link to your clipboard (alternative to Claude native share option)
+   - **Export:** download the conversation as HTML, Markdown, Plain Text, Word (.docx), or Rich Text (.rtf)
 
 ## Tech Stack
 
@@ -41,9 +41,6 @@ Further conversations are served from ShareClaude’s database, not directly fro
 - **Database**: Cloudflare D1
 
 
-## Installation
-
-### Chrome
 ## Installation
 
 ### Chrome 
