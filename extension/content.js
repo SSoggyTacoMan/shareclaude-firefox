@@ -235,6 +235,112 @@ function convertToHTML(title, messages) {
 	const esc = (str) =>
 		str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
+	function markdownToHTML(text) {
+		// 1. Save fenced code blocks
+		const codeBlocks = []
+		text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+			const idx = codeBlocks.push({ lang, code: esc(code) }) - 1
+			return `\x00CODE${idx}\x00`
+		})
+
+		// 2. Handle excerpt blocks (may reference a saved code block placeholder)
+		text = text.replace(
+			/excerpt_from_previous_claude_message\.txt:\n\n(?:\x00CODE(\d+)\x00|([\s\S]*?))(?=\n\n|$)/g,
+			(_, codeIdx, plainContent) => {
+				let quoted
+				if (codeIdx !== undefined) {
+					quoted = (codeBlocks[parseInt(codeIdx)] || {}).code || ''
+					codeBlocks[parseInt(codeIdx)] = null // consumed
+				} else {
+					quoted = esc((plainContent || '').trim())
+				}
+				return `<div class="excerpt"><div class="excerpt-label">↩ Quoting</div><div class="excerpt-body">${quoted}</div></div>`
+			}
+		)
+
+		// 3. Save inline code
+		const inlineCodes = []
+		text = text.replace(/`([^`\n]+)`/g, (_, code) => {
+			const idx = inlineCodes.push(esc(code)) - 1
+			return `\x00IC${idx}\x00`
+		})
+
+		// 4. Tables
+		text = text.replace(
+			/((?:[^\n]*\|[^\n]*\n)+)/g,
+			(block) => {
+				const lines = block.trim().split('\n')
+				if (lines.length < 2) return block
+				const sep = lines[1]
+				if (!/^[\s|:\-]+$/.test(sep)) return block
+				const headers = lines[0].split('|').map(s => s.trim()).filter(Boolean)
+				const rows = lines.slice(2).map(l => l.split('|').map(s => s.trim()).filter(Boolean))
+				const thead = `<thead><tr>${headers.map(h => `<th>${applyInline(h)}</th>`).join('')}</tr></thead>`
+				const tbody = rows.length
+					? `<tbody>${rows.map(r => `<tr>${r.map(c => `<td>${applyInline(c)}</td>`).join('')}</tr>`).join('\n')}</tbody>`
+					: ''
+				return `<table>${thead}${tbody}</table>`
+			}
+		)
+
+		// 5. Headings
+		text = text.replace(/^(#{1,6})\s+(.+)$/gm, (_, h, content) =>
+			`<h${h.length}>${applyInline(content)}</h${h.length}>`
+		)
+
+		// 6. Blockquotes
+		text = text.replace(/^((?:>.*\n?)+)/gm, (match) => {
+			const inner = match.replace(/^>\s?/gm, '').trim()
+			return `<blockquote>${applyInline(inner)}</blockquote>`
+		})
+
+		// 7. Unordered lists
+		text = text.replace(/^((?:[*\-]\s.+\n?)+)/gm, (block) => {
+			const items = block.trim().split('\n').map(l => l.replace(/^[*\-]\s/, ''))
+			return `<ul>${items.map(i => `<li>${applyInline(i)}</li>`).join('')}</ul>`
+		})
+
+		// 8. Ordered lists
+		text = text.replace(/^((?:\d+\.\s.+\n?)+)/gm, (block) => {
+			const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, ''))
+			return `<ol>${items.map(i => `<li>${applyInline(i)}</li>`).join('')}</ol>`
+		})
+
+		// 9. Horizontal rules
+		text = text.replace(/^[-*_]{3,}$/gm, '<hr>')
+
+		// 10. Paragraphs: wrap non-empty, non-block lines
+		text = text
+			.split(/\n{2,}/)
+			.map((para) => {
+				const t = para.trim()
+				if (!t) return ''
+				if (/^<(h[1-6]|ul|ol|li|table|blockquote|pre|hr|div)/.test(t)) return t
+				if (t.startsWith('\x00CODE')) return t
+				return `<p>${applyInline(t.replace(/\n/g, ' '))}</p>`
+			})
+			.join('\n')
+
+		// 11. Restore code blocks
+		text = text.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
+			const b = codeBlocks[parseInt(idx)]
+			if (!b) return ''
+			return `<pre><code${b.lang ? ` class="language-${b.lang}"` : ''}>${b.code}</code></pre>`
+		})
+
+		function applyInline(s) {
+			return s
+				.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+				.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+				.replace(/\*(.+?)\*/g, '<em>$1</em>')
+				.replace(/~~(.+?)~~/g, '<del>$1</del>')
+				.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+				.replace(/\x00IC(\d+)\x00/g, (_, i) => `<code>${inlineCodes[parseInt(i)]}</code>`)
+		}
+
+		return text
+	}
+
 	let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -244,30 +350,46 @@ function convertToHTML(title, messages) {
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 720px; margin: 0 auto; padding: 32px 16px; background: #2C2B28; color: #e0e0e0; line-height: 1.6; }
-h1 { font-size: 1.5rem; color: #f0f0f0; text-align: center; padding: 24px 0 16px; }
-h1::after { content: ''; display: block; width: 48px; height: 2px; background: #D97757; margin: 12px auto 0; border-radius: 1px; }
+h1.title { font-size: 1.5rem; color: #f0f0f0; text-align: center; padding: 24px 0 16px; }
+h1.title::after { content: ''; display: block; width: 48px; height: 2px; background: #D97757; margin: 12px auto 0; border-radius: 1px; }
 article { margin: 16px 0; padding: 16px 20px; border-radius: 12px; }
 article.human { background: #21201C; border: 1px solid rgba(100,100,100,0.3); }
 article.claude { background: #333330; border: 1px solid rgba(100,100,100,0.2); }
-.role { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.role { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 article.human .role { color: #999; }
 article.claude .role { color: #D97757; }
-.content { white-space: pre-wrap; line-height: 1.7; font-size: 15px; }
+.content p { margin: 6px 0; font-size: 15px; }
+.content p:first-child { margin-top: 0; }
+.content p:last-child { margin-bottom: 0; }
+.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 { color: #f0f0f0; margin: 16px 0 6px; font-weight: 600; }
+.content h1 { font-size: 1.3rem; } .content h2 { font-size: 1.15rem; } .content h3 { font-size: 1rem; }
+.content ul, .content ol { padding-left: 20px; margin: 6px 0; }
+.content li { margin: 2px 0; font-size: 15px; }
+.content strong { font-weight: 600; color: #f0f0f0; }
+.content em { font-style: italic; }
+.content del { text-decoration: line-through; color: #888; }
+.content a { color: #7fb3f5; text-decoration: none; }
+.content a:hover { text-decoration: underline; }
+.content blockquote { border-left: 3px solid #555; padding-left: 12px; margin: 8px 0; color: #aaa; font-style: italic; }
 pre { background: #1a1a18; padding: 12px 16px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
 code { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; }
+:not(pre) > code { background: #1a1a18; padding: 2px 5px; border-radius: 4px; font-size: 13px; }
 table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
 th, td { padding: 8px 12px; border: 1px solid #444; text-align: left; }
-th { background: #21201C; font-weight: 600; }
-hr { border: none; border-top: 1px solid rgba(100,100,100,0.2); margin: 4px 0; }
+th { background: #21201C; font-weight: 600; color: #f0f0f0; }
+hr { border: none; border-top: 1px solid rgba(100,100,100,0.2); margin: 8px 0; }
+.excerpt { border-left: 2px solid #D97757; padding: 6px 10px; margin: 8px 0; background: rgba(0,0,0,0.15); border-radius: 0 4px 4px 0; }
+.excerpt-label { font-size: 11px; color: #D97757; font-weight: 600; margin-bottom: 4px; }
+.excerpt-body { font-size: 13px; color: #aaa; white-space: pre-wrap; }
 </style>
 </head>
 <body>
-<h1>${esc(title)}</h1>\n`
+<h1 class="title">${esc(title)}</h1>\n`
 
 	messages.forEach(({ source, message }) => {
 		const role = source === 'user' ? 'You' : 'Claude'
 		const cls = source === 'user' ? 'human' : 'claude'
-		html += `<article class="${cls}" data-role="${source}">\n<div class="role">${role}</div>\n<div class="content">${esc(message)}</div>\n</article>\n`
+		html += `<article class="${cls}" data-role="${source}">\n<div class="role">${role}</div>\n<div class="content">${markdownToHTML(message)}</div>\n</article>\n`
 	})
 	html += `</body>\n</html>`
 	return html
