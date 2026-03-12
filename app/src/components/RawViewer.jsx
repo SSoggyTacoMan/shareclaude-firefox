@@ -25,7 +25,7 @@ function RawViewer() {
                     try {
                         const errData = await res.json();
                         msg = errData.msg || msg;
-                    } catch (_) { /* non-JSON error body */ }
+                    } catch { /* non-JSON error body */ }
                     throw new Error(msg);
                 }
                 const data = await res.json();
