@@ -3,12 +3,18 @@
     "name": "ShareClaude",
     "description": "Share your Claude chats with one click, preserving syntax highlighting for conversations",
     "version": "0.3.3",
-    "permissions": [],
+    "permissions": ["clipboardWrite"],
     "host_permissions": [
         "https://claude.ai/*"
     ],
     "icons": {
         "128": "images/icon-128.png"
+    },
+    "action": {
+        "default_icon": {
+            "128": "images/icon-128.png"
+        },
+        "default_popup": "popup.html"
     },
     "content_scripts": [
         {
