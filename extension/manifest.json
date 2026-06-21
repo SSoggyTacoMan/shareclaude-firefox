@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AI-Chat-Export",
-    "description": "Share and export your AI chats from Claude, ChatGPT, Gemini, LeChat, DeepSeek, and Qwen with one click",
+    "description": "Share or download AI chat conversations in MD, TXT, JSON, HTML, or DOCX with one click."
     "version": "1.0.0",
     "permissions": ["clipboardWrite"],
     "host_permissions": [
